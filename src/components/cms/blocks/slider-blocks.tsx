@@ -262,7 +262,7 @@ export async function ImageSliderBlock({
 }
 
 const CARD_STYLE: Record<string, string> = {
-  bordered: 'border border-hairline bg-surface',
+  bordered: 'cms-surface border border-hairline bg-surface',
   filled: 'bg-muted/[0.05]',
   plain: '',
 };

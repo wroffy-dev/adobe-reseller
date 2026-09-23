@@ -382,6 +382,19 @@
     color: var(--sec-heading-color, inherit);
   }
 
+  /*
+    A white card inside a section — a form panel, a product card — paints its
+    own surface, so it takes the page's text colours back rather than the
+    section's. Without this a dark section's white headings and text carry into
+    the card: `.cms-section h2` outranks a `text-content` class, and the card's
+    "Get in Touch" is white on white.
+  */
+  .cms-section .cms-surface {
+    --sec-heading-color: rgb(var(--brand-text));
+    --sec-text: rgb(var(--brand-text));
+    color: rgb(var(--brand-text));
+  }
+
   .cms-section :where(h1, h2, h3) {
     font-size: var(--sec-heading-size, inherit);
   }

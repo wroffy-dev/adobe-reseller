@@ -583,7 +583,7 @@ export async function ProductPriceBoxBlock({
   ) : null;
 
   return (
-    <div className="rounded-2xl border border-hairline bg-surface p-6 shadow-sm">
+    <div className="cms-surface rounded-2xl border border-hairline bg-surface p-6 shadow-sm">
       {content.formPosition === 'above' && formBody ? (
         <div className="mb-6 border-b border-hairline pb-6">{formBody}</div>
       ) : null}
