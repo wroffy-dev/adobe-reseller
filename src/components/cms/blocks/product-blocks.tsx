@@ -204,7 +204,7 @@ export async function ProductTableBlock({
       />
 
       {/* Desktop: comparison table */}
-      <div className="hidden overflow-hidden rounded-2xl border border-hairline bg-surface shadow-sm lg:block">
+      <div className="cms-surface hidden overflow-hidden rounded-2xl border border-hairline bg-surface shadow-sm lg:block">
         <table className="w-full border-collapse text-sm">
           <caption className="sr-only">{content.heading || 'Product comparison'}</caption>
           <thead>
@@ -335,7 +335,7 @@ export async function ProductTableBlock({
         {products.map((product) => (
           <article
             key={product.id}
-            className="rounded-xl border border-hairline bg-surface p-5 shadow-sm"
+            className="cms-surface rounded-xl border border-hairline bg-surface p-5 shadow-sm"
           >
             <h3 className="font-heading text-base font-bold text-content">{product.name}</h3>
             {product.shortDescription ? (

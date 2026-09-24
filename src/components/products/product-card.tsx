@@ -108,7 +108,7 @@ export function ProductCard({
      */
     <article
       className={cn(
-        'flex flex-col rounded-2xl border bg-surface p-6 transition-shadow',
+        'cms-surface flex flex-col rounded-2xl border bg-surface p-6 transition-shadow',
         highlight
           ? 'border-brand shadow-lg ring-1 ring-brand/20'
           : 'border-hairline shadow-sm hover:shadow-md',

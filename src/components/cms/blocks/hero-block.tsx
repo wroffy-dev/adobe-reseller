@@ -114,7 +114,7 @@ export async function HeroBlock({ content, ctx }: { content: HeroContent; ctx: B
   );
 
   const formPanel = showForm ? (
-    <div className="rounded-[var(--layout-card-radius)] border border-hairline bg-surface p-6 shadow-xl sm:p-7">
+    <div className="cms-surface rounded-[var(--layout-card-radius)] border border-hairline bg-surface p-6 shadow-xl sm:p-7">
       {content.formHeading ? (
         <h2 className="font-heading text-lg font-semibold text-content">{content.formHeading}</h2>
       ) : null}

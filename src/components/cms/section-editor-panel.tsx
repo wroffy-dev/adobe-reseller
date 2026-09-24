@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { X, Undo2, RotateCcw } from 'lucide-react';
-import { getBlock } from '@/lib/cms/blocks';
+import { getBlock, type BlockSurface } from '@/lib/cms/blocks';
 import type { SectionDesign } from '@/lib/cms/design';
 import { AdminTabs, TabPanel } from '@/components/admin/admin-tabs';
 import { SaveStateIndicator, type SaveState } from '@/components/admin/save-state';
@@ -55,6 +55,7 @@ export function SectionEditorPanel({
   takenAnchors,
   onSave,
   onClose,
+  surface = 'page',
 }: {
   section: BuilderSection;
   canEdit: boolean;
@@ -65,6 +66,8 @@ export function SectionEditorPanel({
     settings: FieldValues;
   }) => Promise<boolean>;
   onClose?: () => void;
+  /** Where the section lives, which decides the few controls only one surface reads. */
+  surface?: BlockSurface;
 }) {
   const definition = getBlock(section.blockType);
 
@@ -252,6 +255,7 @@ export function SectionEditorPanel({
               view="responsive"
               idPrefix={`r-${section.id}`}
               takenAnchors={takenAnchors}
+              offerStretch={surface === 'productDetail'}
               onChange={(next: SectionDesign) =>
                 edit('settings:responsive', { ...draft, settings: next as unknown as FieldValues })
               }

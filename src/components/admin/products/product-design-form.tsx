@@ -7,6 +7,7 @@ import {
   SHADOWS,
   IMAGE_RATIOS,
   SIDEBAR_WIDTHS,
+  CONTAINER_WIDTH_PRESETS,
   MOBILE_SIDEBAR,
   PRODUCT_TYPE_ROLES,
   PRODUCT_TYPE_ROLE_LABELS,
@@ -81,6 +82,14 @@ export function ProductDesignForm({
   const [tab, setTab] = React.useState('images');
   const [values, setValues] = React.useState<ResolvedProductSettings>(initial);
   const [state, setState] = React.useState<SaveState>('idle');
+  /*
+   * "Custom" is a choice of its own, not only a value no preset matches: an
+   * administrator who picks it expects the length box even while the value
+   * still happens to equal a preset.
+   */
+  const [customContainer, setCustomContainer] = React.useState(
+    () => !CONTAINER_WIDTH_PRESETS.some((preset) => preset.value === initial.layout.containerWidth),
+  );
 
   const dirty = state === 'dirty' || state === 'error';
 
@@ -513,13 +522,36 @@ export function ProductDesignForm({
                 description="Blank inherits the website's own container."
               >
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <Field label="Container width">
-                    <UnitInput
-                      value={values.layout.containerWidth}
-                      aria-label="Container width"
-                      onChange={(v) => setLayout('containerWidth', v)}
-                    />
+                  <Field label="Container width" htmlFor="container-width-preset">
+                    <Select
+                      id="container-width-preset"
+                      value={customContainer ? 'custom' : values.layout.containerWidth}
+                      onChange={(e) => {
+                        if (e.target.value === 'custom') {
+                          setCustomContainer(true);
+                          return;
+                        }
+                        setCustomContainer(false);
+                        setLayout('containerWidth', e.target.value);
+                      }}
+                    >
+                      {CONTAINER_WIDTH_PRESETS.map((preset) => (
+                        <option key={preset.value || 'default'} value={preset.value}>
+                          {preset.label}
+                        </option>
+                      ))}
+                      <option value="custom">Custom</option>
+                    </Select>
                   </Field>
+                  {customContainer ? (
+                    <Field label="Custom width" hint="Any CSS length, such as 1200px or 90%.">
+                      <UnitInput
+                        value={values.layout.containerWidth}
+                        aria-label="Custom container width"
+                        onChange={(v) => setLayout('containerWidth', v)}
+                      />
+                    </Field>
+                  ) : null}
                   <Field label="Space between sections">
                     <UnitInput
                       value={values.layout.sectionGap}

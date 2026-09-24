@@ -88,7 +88,7 @@ export async function CtaBlock({ content, ctx }: { content: CtaContent; ctx: Blo
             </div>
           ) : null}
         </div>
-        <div className="rounded-2xl border border-hairline bg-surface p-6 shadow-lg sm:p-8">
+        <div className="cms-surface rounded-2xl border border-hairline bg-surface p-6 shadow-lg sm:p-8">
           <PublicFormRenderer
             form={form}
             ctaLocation={content.ctaLocation || 'cta-block'}
@@ -193,7 +193,7 @@ export async function FormBlock({
   }
 
   const formPanel = (
-    <div className="rounded-2xl border border-hairline bg-surface p-6 shadow-sm sm:p-8">
+    <div className="cms-surface rounded-2xl border border-hairline bg-surface p-6 shadow-sm sm:p-8">
       <PublicFormRenderer form={form} ctaLocation={content.ctaLocation || 'form-block'} />
     </div>
   );

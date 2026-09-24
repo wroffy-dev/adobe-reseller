@@ -130,6 +130,20 @@ export const DEFAULT_PRODUCT_IMAGE: ProductImageSettings = productImageSchema.pa
 // ---------------------------------------------------------------------------
 
 export const SIDEBAR_WIDTHS = ['25%', '30%', '35%', '40%'] as const;
+
+/**
+ * Quick choices for the product page's container width.
+ *
+ * Blank inherits the website's own container, like every other blank here.
+ * "Wide" is the header's default width, so a product page set to it lines its
+ * content up with the logo and the menu. Anything else is a custom length.
+ */
+export const CONTAINER_WIDTH_PRESETS = [
+  { value: '', label: 'Website default' },
+  { value: '48rem', label: 'Narrow — 768px' },
+  { value: '80rem', label: 'Wide — 1280px, lines up with the header' },
+  { value: '100%', label: 'Full width' },
+] as const;
 export const MOBILE_SIDEBAR = ['below', 'above', 'hidden'] as const;
 
 export const productLayoutSchema = z.object({
