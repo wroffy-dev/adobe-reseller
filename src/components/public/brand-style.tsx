@@ -1,6 +1,7 @@
 import type { WebsiteSettings } from '@prisma/client';
 import { fontStack, googleFontsHref, nearestWeight } from '@/lib/cms/google-fonts';
 import { chromeStylesheet } from '@/lib/cms/chrome';
+import { buttonStylesheet } from '@/lib/cms/buttons';
 
 /** Converts #RRGGBB to the "R G B" triple Tailwind's <alpha-value> tokens need. */
 function rgbTriple(hex: string, fallback: string): string {
@@ -139,7 +140,12 @@ export function BrandStyle({ settings }: { settings: WebsiteSettings }) {
         * nobody has set any, which is the point: the chrome keeps whatever it
         * looked like before this screen existed.
         */}
-      <style dangerouslySetInnerHTML={{ __html: root + responsive + chromeStylesheet(settings) }} />
+      <style
+        dangerouslySetInnerHTML={{
+          // The Primary and Secondary button designs: empty until one is set.
+          __html: root + responsive + chromeStylesheet(settings) + buttonStylesheet(settings),
+        }}
+      />
     </>
   );
 }

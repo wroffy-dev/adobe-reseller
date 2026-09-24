@@ -475,6 +475,36 @@
     text-transform: var(--btn-transform);
   }
 
+  /*
+    The rule above is one class deep and loses to the size utilities
+    `buttonClasses` adds (rounded-lg, px-4, text-sm, font-medium), which is why
+    the radius, padding and button type settings never reached a button. Two
+    classes win. The old fixed heights become minimums, so the default settings
+    draw the sizes buttons always had.
+  */
+  .btn-tokens:is(.btn-sm, .btn-md, .btn-lg) {
+    height: auto;
+    min-height: 2.5rem;
+    border-radius: var(--btn-radius);
+    padding-inline: var(--btn-padding-x);
+    padding-block: var(--btn-padding-y);
+    font-size: var(--font-button-size);
+    font-weight: var(--font-button-weight);
+    line-height: 1.25;
+  }
+  .btn-tokens.btn-lg {
+    min-height: 3rem;
+    padding-inline: calc(var(--btn-padding-x) * 1.2);
+    font-size: calc(var(--font-button-size) * 8 / 7);
+  }
+  .btn-tokens.btn-sm {
+    min-height: 2rem;
+    padding-inline: calc(var(--btn-padding-x) * 0.6);
+    /* Scaled like the side padding, so a small button keeps its 32px. */
+    padding-block: calc(var(--btn-padding-y) * 0.6);
+    font-size: calc(var(--font-button-size) * 13 / 14);
+  }
+
   .nav-tokens {
     font-family: var(--font-nav);
     font-weight: var(--font-nav-weight);

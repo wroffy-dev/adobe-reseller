@@ -2157,6 +2157,22 @@ model WebsiteSettings {
   buttonSecondaryStyle String @default("outline")
   buttonTextTransform  String @default("none")
 
+  /// The Primary and Secondary button designs. Blank takes the colour from the
+  /// role's style and the theme; see src/lib/cms/buttons.ts.
+  buttonBorderWidth          String @default("")
+  buttonPrimaryBg            String @default("")
+  buttonPrimaryText          String @default("")
+  buttonPrimaryBorder        String @default("")
+  buttonPrimaryHoverBg       String @default("")
+  buttonPrimaryHoverText     String @default("")
+  buttonPrimaryHoverBorder   String @default("")
+  buttonSecondaryBg          String @default("")
+  buttonSecondaryText        String @default("")
+  buttonSecondaryBorder      String @default("")
+  buttonSecondaryHoverBg     String @default("")
+  buttonSecondaryHoverText   String @default("")
+  buttonSecondaryHoverBorder String @default("")
+
   // Misc
   defaultCurrency String  @default("INR")
   maintenanceMode Boolean @default(false)

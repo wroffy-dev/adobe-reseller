@@ -6,6 +6,7 @@ import { Search, X } from 'lucide-react';
 import { Input } from '@/components/ui/field';
 import { Spinner } from '@/components/ui/icons';
 import { cn } from '@/lib/utils/cn';
+import { buttonClasses } from '@/components/ui/button';
 
 /**
  * Blog search.
@@ -108,10 +109,7 @@ export function BlogSearch({
       {showButton ? (
         <button
           type="submit"
-          className={cn(
-            'btn-tokens inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-brand px-4 text-sm font-medium text-white transition-colors hover:bg-brand/90',
-            compact ? 'h-9' : 'h-10',
-          )}
+          className={buttonClasses('primary', compact ? 'sm' : 'md', 'btn-tokens shrink-0')}
         >
           {pending ? <Spinner className="h-4 w-4 animate-spin" aria-hidden="true" /> : null}
           {buttonLabel || 'Search'}
