@@ -619,6 +619,7 @@ const PAGE_BLOCKS: Record<string, BlockDefinition> = {
     group: 'Content',
     icon: 'layout-template',
     schema: heroSchema,
+    design: ['buttons'],
     formFields: formStyleGroups({ heading: 'formHeading', description: 'formDescription' }),
     fields: [
       {
@@ -769,6 +770,7 @@ const PAGE_BLOCKS: Record<string, BlockDefinition> = {
     icon: 'image',
     surfaces: ['page', 'blogListing', 'blogArticle'],
     schema: imageContentSchema,
+    design: ['buttons'],
     fields: [
       { kind: 'text', name: 'eyebrow', label: 'Eyebrow', width: 'half' },
       {
@@ -859,6 +861,7 @@ const PAGE_BLOCKS: Record<string, BlockDefinition> = {
     group: 'Products',
     icon: 'table',
     schema: productTableSchema,
+    design: ['buttons'],
     fields: [
       { kind: 'text', name: 'heading', label: 'Heading' },
       { kind: 'textarea', name: 'description', label: 'Description', rows: 2 },
@@ -956,6 +959,7 @@ const PAGE_BLOCKS: Record<string, BlockDefinition> = {
     icon: 'megaphone',
     surfaces: ['page', 'blogListing', 'blogArticle'],
     schema: ctaSchema,
+    design: ['buttons'],
     formFields: formStyleGroups(),
     fields: [
       {
@@ -1147,6 +1151,7 @@ const PAGE_BLOCKS: Record<string, BlockDefinition> = {
     icon: 'gift',
     surfaces: ['page', 'blogListing', 'blogArticle'],
     schema: leadMagnetSchema,
+    design: ['buttons'],
     formFields: formStyleGroups({ buttonLabel: 'ctaLabel' }),
     fields: [
       {
@@ -1177,6 +1182,7 @@ const PAGE_BLOCKS: Record<string, BlockDefinition> = {
     icon: 'clipboard-list',
     surfaces: ['page', 'blogListing', 'blogArticle'],
     schema: formBlockSchema,
+    design: ['buttons'],
     formFields: formStyleGroups(),
     fields: [
       { kind: 'text', name: 'heading', label: 'Heading' },
@@ -1294,6 +1300,7 @@ const PAGE_BLOCKS: Record<string, BlockDefinition> = {
     group: 'Cards & media',
     icon: 'image',
     schema: imageCardsSchema,
+    design: ['buttons'],
     fields: [
       { kind: 'text', name: 'eyebrow', label: 'Eyebrow', width: 'half' },
       { kind: 'text', name: 'heading', label: 'Heading', width: 'half' },
@@ -1365,6 +1372,7 @@ const PAGE_BLOCKS: Record<string, BlockDefinition> = {
     group: 'Cards & media',
     icon: 'grid-3x3',
     schema: iconCardsSchema,
+    design: ['buttons'],
     fields: [
       { kind: 'text', name: 'eyebrow', label: 'Eyebrow', width: 'half' },
       { kind: 'text', name: 'heading', label: 'Heading', width: 'half' },
@@ -1432,6 +1440,7 @@ const PAGE_BLOCKS: Record<string, BlockDefinition> = {
     icon: 'layout-template',
     surfaces: ['page', 'blogListing', 'blogArticle'],
     schema: imageBoxSchema,
+    design: ['buttons'],
     fields: [
       {
         kind: 'select',
@@ -1483,6 +1492,7 @@ const PAGE_BLOCKS: Record<string, BlockDefinition> = {
     group: 'Cards & media',
     icon: 'shield',
     schema: iconBoxSchema,
+    design: ['buttons'],
     fields: [
       { kind: 'icon', name: 'icon', label: 'Icon', width: 'half' },
       { kind: 'media', name: 'imageId', label: 'Or upload an icon', width: 'half' },
@@ -1558,6 +1568,7 @@ const PAGE_BLOCKS: Record<string, BlockDefinition> = {
     icon: 'text',
     surfaces: ['page', 'blogListing', 'blogArticle'],
     schema: headingTextSchema,
+    design: ['buttons'],
     fields: [
       { kind: 'text', name: 'eyebrow', label: 'Eyebrow', width: 'half' },
       { kind: 'select', name: 'align', label: 'Alignment', width: 'half', options: ALIGN_OPTIONS },
@@ -1575,6 +1586,7 @@ const PAGE_BLOCKS: Record<string, BlockDefinition> = {
     group: 'Content',
     icon: 'image',
     schema: textListImageSchema,
+    design: ['buttons'],
     fields: [
       { kind: 'text', name: 'eyebrow', label: 'Eyebrow', width: 'half' },
       {

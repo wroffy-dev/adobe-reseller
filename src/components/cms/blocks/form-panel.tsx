@@ -88,7 +88,18 @@ export function FormPanel({
   const card = cardClassName ?? (wantsFormCard(style) ? cn(STYLED_CARD, style?.cardBorderColor && 'border') : '');
 
   return (
-    <div className={cn(card, className) || undefined} style={formCardStyle(style)}>
+    <div
+      className={
+        cn(
+          card,
+          // The section's Button position moves the submit too, unless this
+          // placement's Form tab chose an alignment of its own.
+          (style?.buttonAlign ?? 'inherit') === 'inherit' && 'cms-form-follow',
+          className,
+        ) || undefined
+      }
+      style={formCardStyle(style)}
+    >
       {headingText ? (
         <HeadingTag className={headingClassName} style={headingStyle}>
           {headingText}

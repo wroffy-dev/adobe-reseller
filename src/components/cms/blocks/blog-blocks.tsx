@@ -54,7 +54,7 @@ import { Pagination } from '@/components/blog/pagination';
 import { EmptyState } from '@/components/ui/states';
 import { formatDate, initials } from '@/lib/utils/format';
 import { cn } from '@/lib/utils/cn';
-import { SectionHeading, CtaLink, type BlockContext, mainCtaVariant } from './shared';
+import { SectionHeading, CtaLink, type BlockContext, mainCtaVariant, ctaVisible } from './shared';
 
 /**
  * Blog block renderers.
@@ -158,7 +158,7 @@ export async function BlogHeroBlock({ content, ctx }: { content: BlogHeroContent
       {content.showCta ? (
         <div
           className={cn(
-            'mt-7 flex flex-wrap gap-3',
+            'cms-actions mt-7',
             content.contentAlign === 'center' && 'justify-center',
           )}
         >
@@ -462,8 +462,8 @@ export async function BlogFeaturedBlock({
         className="mt-6"
       />
 
-      {content.showCta ? (
-        <div className="mt-6">
+      {content.showCta && ctaVisible(content.ctaLabel, href) ? (
+        <div className="cms-actions mt-6">
           <CtaLink label={content.ctaLabel} url={href} variant="primary" size="md" />
         </div>
       ) : null}
@@ -703,8 +703,8 @@ export async function BlogGridBlock({ content, ctx }: { content: BlogGridContent
         />
       ) : null}
 
-      {content.ctaLabel ? (
-        <div className="flex justify-center">
+      {ctaVisible(content.ctaLabel, content.ctaUrl) ? (
+        <div className="cms-actions justify-center">
           <CtaLink label={content.ctaLabel} url={content.ctaUrl} variant="outline" size="md" />
         </div>
       ) : null}

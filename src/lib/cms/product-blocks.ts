@@ -550,6 +550,7 @@ export const PRODUCT_BLOCKS: Record<string, BlockDefinition> = {
     surfaces: ['productSidebar'],
     singleton: true,
     schema: productPriceBoxSchema,
+    design: ['buttons'],
     formFields: formStyleGroups({ heading: 'formHeading', card: false }),
     fields: [
       { kind: 'boolean', name: 'showMonthly', label: 'Show the monthly price', width: 'half' },

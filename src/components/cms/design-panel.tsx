@@ -1,7 +1,17 @@
 'use client';
 
 import * as React from 'react';
-import { Monitor, Tablet, Smartphone, Eye, EyeOff } from 'lucide-react';
+import {
+  Monitor,
+  Tablet,
+  Smartphone,
+  Eye,
+  EyeOff,
+  AlignHorizontalJustifyStart,
+  AlignHorizontalJustifyCenter,
+  AlignHorizontalJustifyEnd,
+  MoveHorizontal,
+} from 'lucide-react';
 import {
   BREAKPOINTS,
   BREAKPOINT_LABELS,
@@ -19,6 +29,7 @@ import { Field, Input, Select, Switch, Label } from '@/components/ui/field';
 import { MediaPicker } from '@/components/admin/media-picker';
 import { UnitInput, BoxInput, ColorInput, DesignGroup } from './design-controls';
 import { cn } from '@/lib/utils/cn';
+import type { BlockDesignCapability } from '@/lib/cms/block-types';
 
 const BREAKPOINT_ICON: Record<Breakpoint, typeof Monitor> = {
   desktop: Monitor,
@@ -57,6 +68,18 @@ const WIDTH_LABELS: Record<(typeof WIDTH_MODES)[number], string> = {
  */
 export type DesignPanelView = 'all' | 'design' | 'responsive' | 'advanced';
 
+const BUTTON_POSITION_OPTIONS: Array<{
+  value: BreakpointDesign['buttonPosition'];
+  label: string;
+  Icon: React.ComponentType<{ className?: string; 'aria-hidden'?: boolean | 'true' }> | null;
+}> = [
+  { value: 'inherit', label: 'Default', Icon: null },
+  { value: 'left', label: 'Left', Icon: AlignHorizontalJustifyStart },
+  { value: 'center', label: 'Centre', Icon: AlignHorizontalJustifyCenter },
+  { value: 'right', label: 'Right', Icon: AlignHorizontalJustifyEnd },
+  { value: 'full', label: 'Full', Icon: MoveHorizontal },
+];
+
 export function DesignPanel({
   value,
   onChange,
@@ -66,6 +89,8 @@ export function DesignPanel({
   takenAnchors = [],
   /** Offer "Stretch to the screen edges" — only product pages read it. */
   offerStretch = false,
+  /** What this block's renderer can act on; controls for anything else are hidden. */
+  supports = [],
 }: {
   value: unknown;
   onChange: (next: SectionDesign) => void;
@@ -73,6 +98,7 @@ export function DesignPanel({
   view?: DesignPanelView;
   takenAnchors?: string[];
   offerStretch?: boolean;
+  supports?: readonly BlockDesignCapability[];
 }) {
   // Always work against a fully-parsed design so a legacy or partial settings
   // object still renders every control with sensible values.
@@ -275,6 +301,40 @@ export function DesignPanel({
                 </Select>
               </Field>
             </div>
+
+            {supports.includes('buttons') ? (
+              <div className="space-y-1.5">
+                <Label>Button position</Label>
+                <div
+                  role="group"
+                  aria-label="Button position"
+                  className="grid grid-cols-5 gap-1 rounded-lg bg-muted/[0.06] p-1"
+                >
+                  {BUTTON_POSITION_OPTIONS.map(({ value, label, Icon }) => {
+                    const active = current.buttonPosition === value;
+                    return (
+                      <button
+                        key={value}
+                        type="button"
+                        aria-pressed={active}
+                        title={value === 'inherit' && !isDesktop ? 'Inherit' : label}
+                        onClick={() => patchBreakpoint(breakpoint, { buttonPosition: value })}
+                        className={cn(
+                          'flex flex-col items-center gap-1 rounded-md px-1 py-1.5 text-[0.6875rem] font-medium transition-colors',
+                          active ? 'bg-surface text-content shadow-sm' : 'text-muted hover:text-content',
+                        )}
+                      >
+                        {Icon ? <Icon className="h-4 w-4" aria-hidden="true" /> : null}
+                        {value === 'inherit' && !isDesktop ? 'Inherit' : label}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="text-xs text-muted">
+                  Where this section’s buttons sit, including a form’s submit button.
+                </p>
+              </div>
+            ) : null}
 
             <div className="grid gap-3 sm:grid-cols-2">
               {(
@@ -735,5 +795,6 @@ function countOverrides(bp: BreakpointDesign): number {
   }
   if (bp.columns !== null) count += 1;
   if (bp.align !== 'inherit') count += 1;
+  if (bp.buttonPosition !== 'inherit') count += 1;
   return count;
 }

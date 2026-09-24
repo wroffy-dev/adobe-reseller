@@ -60,6 +60,15 @@ export const BLOCK_SURFACE_LABELS: Record<BlockSurface, string> = {
  */
 export const PAGE_BLOCK_SURFACES: readonly BlockSurface[] = ['productDetail'];
 
+/**
+ * Design controls a block's renderer can act on. The design panel shows a
+ * control only to blocks that list it, so no section is offered a setting it
+ * would ignore. `buttons`: the renderer draws a `.cms-actions` row of calls
+ * to action or an embedded form (FormPanel), so Button position reaches it.
+ */
+export const BLOCK_DESIGN_CAPABILITIES = ['buttons'] as const;
+export type BlockDesignCapability = (typeof BLOCK_DESIGN_CAPABILITIES)[number];
+
 export type BlockDefinition = {
   type: string;
   label: string;
@@ -73,6 +82,8 @@ export type BlockDefinition = {
    * of it. Absent on every block without a form, so the tab does not show.
    */
   formFields?: FormFieldGroup[];
+  /** Design-panel controls this block's renderer can act on. */
+  design?: BlockDesignCapability[];
   /** Surfaces whose "Add section" picker offers this block. Defaults to pages. */
   surfaces?: BlockSurface[];
   /**

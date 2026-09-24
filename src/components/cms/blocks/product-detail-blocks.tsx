@@ -629,13 +629,15 @@ export async function ProductPriceBoxBlock({
       )}
 
       {content.showCta ? (
-        <ProductCta
-          product={product}
-          label={content.ctaLabel || undefined}
-          size="lg"
-          className="mt-6 w-full"
-          ctaLocation="product-page"
-        />
+        <div className="cms-actions mt-6">
+          <ProductCta
+            product={product}
+            label={content.ctaLabel || undefined}
+            size="lg"
+            className="w-full"
+            ctaLocation="product-page"
+          />
+        </div>
       ) : null}
 
       {specs.length > 0 ? (

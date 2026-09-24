@@ -4,7 +4,7 @@ import { getMedia } from '@/lib/services/media';
 import { getPublicForm } from '@/lib/services/forms';
 import { resolveCmsIcon } from '@/components/ui/icons';
 import { cn } from '@/lib/utils/cn';
-import { SectionHeading, CtaLink, CmsImage, type BlockContext, mainCtaVariant } from './shared';
+import { SectionHeading, CtaLink, CmsImage, type BlockContext, mainCtaVariant, ctaVisible } from './shared';
 import { FormPanel } from './form-panel';
 
 /**
@@ -71,8 +71,9 @@ export async function HeroBlock({ content, ctx }: { content: HeroContent; ctx: B
         </ul>
       ) : null}
 
-      {content.primaryCtaLabel || content.secondaryCtaLabel ? (
-        <div className={cn('mt-9 flex flex-wrap gap-3', centred && 'justify-center')}>
+      {ctaVisible(content.primaryCtaLabel, content.primaryCtaUrl) ||
+      ctaVisible(content.secondaryCtaLabel, content.secondaryCtaUrl) ? (
+        <div className={cn('cms-actions mt-9', centred && 'justify-center')}>
           <CtaLink
             label={content.primaryCtaLabel}
             url={content.primaryCtaUrl}

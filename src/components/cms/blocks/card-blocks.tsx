@@ -22,6 +22,7 @@ import {
   blockColumnVars,
   type BlockContext,
   mainCtaVariant,
+  ctaVisible,
 } from './shared';
 
 /** Card chrome shared by the image and icon card grids. */
@@ -113,9 +114,11 @@ export async function ImageCardsBlock({
                       </p>
                     ) : null}
                     {item.ctaLabel && !item.linkUrl ? (
-                      <div className={cn('mt-4', content.cardAlign === 'center' && 'flex justify-center')}>
-                        <CtaLink label={item.ctaLabel} url={item.ctaUrl} variant="outline" size="sm" />
-                      </div>
+                      ctaVisible(item.ctaLabel, item.ctaUrl) ? (
+                        <div className={cn('cms-actions mt-4', content.cardAlign === 'center' && 'justify-center')}>
+                          <CtaLink label={item.ctaLabel} url={item.ctaUrl} variant="outline" size="sm" />
+                        </div>
+                      ) : null
                     ) : item.ctaLabel ? (
                       <span className="mt-4 inline-flex text-sm font-medium cms-accent group-hover:underline">
                         {item.ctaLabel}
@@ -215,9 +218,16 @@ export async function IconCardsBlock({
                       </p>
                     ) : null}
                     {item.ctaLabel && !item.linkUrl ? (
-                      <div className={cn('mt-4', !beside && content.cardAlign === 'center' && 'flex justify-center')}>
-                        <CtaLink label={item.ctaLabel} url={item.ctaUrl} variant="outline" size="sm" />
-                      </div>
+                      ctaVisible(item.ctaLabel, item.ctaUrl) ? (
+                        <div
+                          className={cn(
+                            'cms-actions mt-4',
+                            !beside && content.cardAlign === 'center' && 'justify-center',
+                          )}
+                        >
+                          <CtaLink label={item.ctaLabel} url={item.ctaUrl} variant="outline" size="sm" />
+                        </div>
+                      ) : null
                     ) : item.ctaLabel ? (
                       <span className="mt-3 inline-flex text-sm font-medium cms-accent group-hover:underline">
                         {item.ctaLabel}
@@ -250,8 +260,8 @@ export async function ImageBoxBlock({ content, ctx }: { content: ImageBoxContent
         html={content.text}
         className={cn('mt-5', (ctx.inverted || content.layout === 'backgroundImage') && 'text-white/85')}
       />
-      {content.ctaLabel ? (
-        <div className="mt-7">
+      {ctaVisible(content.ctaLabel, content.ctaUrl) ? (
+        <div className="cms-actions mt-7">
           <CtaLink
             label={content.ctaLabel}
             url={content.ctaUrl}
@@ -355,8 +365,8 @@ export async function IconBoxBlock({ content, ctx }: { content: IconBoxContent; 
           {content.description}
         </p>
       ) : null}
-      {content.ctaLabel && !content.linkUrl ? (
-        <div className={cn('mt-6', centred && 'flex justify-center')}>
+      {ctaVisible(content.ctaLabel, content.ctaUrl) && !content.linkUrl ? (
+        <div className={cn('cms-actions mt-6', centred && 'justify-center')}>
           <CtaLink
             label={content.ctaLabel}
             url={content.ctaUrl}
@@ -483,8 +493,8 @@ export function HeadingTextBlock({ content, ctx }: { content: HeadingTextContent
         className={centred ? undefined : 'max-w-3xl'}
       />
       <RichText html={content.content} className={cn('mt-6', ctx.inverted && 'text-white/80')} />
-      {content.ctaLabel ? (
-        <div className={cn('mt-8 flex flex-wrap gap-3', centred && 'justify-center')}>
+      {ctaVisible(content.ctaLabel, content.ctaUrl) ? (
+        <div className={cn('cms-actions mt-8', centred && 'justify-center')}>
           <CtaLink
             label={content.ctaLabel}
             url={content.ctaUrl}
@@ -534,8 +544,9 @@ export async function TextListImageBlock({
         </ul>
       ) : null}
 
-      {content.primaryCtaLabel || content.secondaryCtaLabel ? (
-        <div className="mt-8 flex flex-wrap gap-3">
+      {ctaVisible(content.primaryCtaLabel, content.primaryCtaUrl) ||
+      ctaVisible(content.secondaryCtaLabel, content.secondaryCtaUrl) ? (
+        <div className="cms-actions mt-8">
           <CtaLink
             label={content.primaryCtaLabel}
             url={content.primaryCtaUrl}

@@ -287,6 +287,7 @@ export const SLIDER_BLOCKS: Record<string, BlockDefinition> = {
     icon: 'image',
     surfaces: ['page', 'blogListing'],
     schema: imageSliderSchema,
+    design: ['buttons'],
     fields: [
       ...INTRO_FIELDS,
       {
@@ -426,6 +427,7 @@ export const SLIDER_BLOCKS: Record<string, BlockDefinition> = {
     icon: 'layout-panel-left',
     surfaces: ['page', 'blogListing'],
     schema: contentSliderSchema,
+    design: ['buttons'],
     fields: [
       ...INTRO_FIELDS,
       {

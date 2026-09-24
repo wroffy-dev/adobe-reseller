@@ -283,6 +283,7 @@ export function SectionEditorPanel({
               idPrefix={`r-${section.id}`}
               takenAnchors={takenAnchors}
               offerStretch={surface === 'productDetail'}
+              supports={definition.design}
               onChange={(next: SectionDesign) =>
                 edit('settings:responsive', { ...draft, settings: next as unknown as FieldValues })
               }

@@ -443,6 +443,17 @@
 
   .cms-stack > * + * { margin-top: var(--sec-content-gap, 1rem); }
 
+  /*
+    A block's row of call-to-action buttons. The section's Button position
+    (Responsive tab) aligns or stretches it per breakpoint.
+  */
+  .cms-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
   /* Section colour overrides reach buttons and links without !important. */
   .cms-section .cms-btn-primary {
     background-color: var(--sec-button, rgb(var(--brand-primary)));

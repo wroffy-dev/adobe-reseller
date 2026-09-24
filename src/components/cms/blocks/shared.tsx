@@ -152,6 +152,15 @@ export function SectionHeading({
 }
 
 /**
+ * Whether a CtaLink with this label and link would render anything. A row of
+ * buttons is skipped when none of them would, rather than left as an empty
+ * box taking up space.
+ */
+export function ctaVisible(label?: string | null, url?: string | null): boolean {
+  return Boolean(label?.trim() && safeUrl(url));
+}
+
+/**
  * The variant a block's main call to action is drawn in.
  *
  * On a dark section the main button has always been an outline, so it reads

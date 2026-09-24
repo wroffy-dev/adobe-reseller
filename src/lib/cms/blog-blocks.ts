@@ -698,6 +698,7 @@ export const BLOG_BLOCKS: Record<string, BlockDefinition> = {
     icon: 'layout-template',
     surfaces: ['blogListing'],
     schema: blogHeroSchema,
+    design: ['buttons'],
     fields: [
       { kind: 'boolean', name: 'showHeading', label: 'Show heading', width: 'half' },
       { kind: 'boolean', name: 'showSubtitle', label: 'Show subtitle', width: 'half' },
@@ -869,6 +870,7 @@ export const BLOG_BLOCKS: Record<string, BlockDefinition> = {
     icon: 'star',
     surfaces: ['blogListing'],
     schema: blogFeaturedSchema,
+    design: ['buttons'],
     fields: [
       ...headingFields,
       {
@@ -938,6 +940,7 @@ export const BLOG_BLOCKS: Record<string, BlockDefinition> = {
     icon: 'grid-3x3',
     surfaces: ['blogListing', 'blogArticle'],
     schema: blogGridSchema,
+    design: ['buttons'],
     fields: [
       ...headingFields,
       ...postSourceFields,
@@ -1000,6 +1003,7 @@ export const BLOG_BLOCKS: Record<string, BlockDefinition> = {
     icon: 'megaphone',
     surfaces: ['blogListing', 'blogArticle'],
     schema: blogNewsletterSchema,
+    design: ['buttons'],
     formFields: formStyleGroups(),
     fields: [
       ...headingFields,
@@ -1416,6 +1420,7 @@ export const BLOG_BLOCKS: Record<string, BlockDefinition> = {
     icon: 'clipboard-list',
     surfaces: ['blogSidebar'],
     schema: widgetFormSchema,
+    design: ['buttons'],
     formFields: formStyleGroups({ card: false }),
     fields: [
       ...widgetBaseFields,
@@ -1445,6 +1450,7 @@ export const BLOG_BLOCKS: Record<string, BlockDefinition> = {
     icon: 'megaphone',
     surfaces: ['blogSidebar'],
     schema: widgetFormSchema,
+    design: ['buttons'],
     formFields: formStyleGroups({ card: false }),
     fields: [
       ...widgetBaseFields,

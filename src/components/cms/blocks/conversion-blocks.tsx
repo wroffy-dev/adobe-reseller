@@ -5,7 +5,7 @@ import { getPublicForm, getDefaultForm } from '@/lib/services/forms';
 import { getMedia } from '@/lib/services/media';
 import { cn } from '@/lib/utils/cn';
 import { Check } from 'lucide-react';
-import { SectionHeading, CtaLink, type BlockContext, mainCtaVariant } from './shared';
+import { SectionHeading, CtaLink, type BlockContext, mainCtaVariant, ctaVisible } from './shared';
 import { FormPanel } from './form-panel';
 import { buildPanelStyles } from '@/lib/cms/design';
 
@@ -29,8 +29,10 @@ export async function CtaBlock({ content, ctx }: { content: CtaContent; ctx: Blo
   const justifyClass =
     align === 'left' ? 'justify-start' : align === 'right' ? 'justify-end' : 'justify-center';
 
-  const showPrimary = content.showPrimaryCta && Boolean(content.primaryCtaLabel);
-  const showSecondary = content.showSecondaryCta && Boolean(content.secondaryCtaLabel);
+  const showPrimary =
+    content.showPrimaryCta && ctaVisible(content.primaryCtaLabel, content.primaryCtaUrl);
+  const showSecondary =
+    content.showSecondaryCta && ctaVisible(content.secondaryCtaLabel, content.secondaryCtaUrl);
   const hasButtons = showPrimary || showSecondary;
 
   const buttonRow = (variantFor: {
@@ -38,7 +40,7 @@ export async function CtaBlock({ content, ctx }: { content: CtaContent; ctx: Blo
     secondary: 'outline' | 'ghost';
   }) =>
     hasButtons ? (
-      <div className={cn('flex flex-wrap gap-3', justifyClass)}>
+      <div className={cn('cms-actions', justifyClass)}>
         {showPrimary ? (
           <CtaLink
             label={content.primaryCtaLabel}
@@ -70,7 +72,7 @@ export async function CtaBlock({ content, ctx }: { content: CtaContent; ctx: Blo
           />
           {hasButtons ? (
             <div className="mt-7">
-              <div className="flex flex-wrap gap-3">
+              <div className="cms-actions">
                 {showPrimary ? (
                   <CtaLink
                     label={content.primaryCtaLabel}

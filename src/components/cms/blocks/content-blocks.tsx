@@ -19,6 +19,7 @@ import {
   columnVars,
   blockColumnVars,
   mainCtaVariant,
+  ctaVisible,
 } from './shared';
 
 export function RichTextBlock({ content, ctx }: { content: RichTextContent; ctx: BlockContext }) {
@@ -65,15 +66,17 @@ export async function ImageContentBlock({
           inverted={inverted}
         />
         <RichText html={content.description} className={cn('mt-5', inverted && 'text-white/80')} />
-        <div className="mt-7">
-          <CtaLink
-            label={content.ctaLabel}
-            url={content.ctaUrl}
-            variant={mainCtaVariant(ctx)}
-            role="primary"
-            size="md"
-          />
-        </div>
+        {ctaVisible(content.ctaLabel, content.ctaUrl) ? (
+          <div className="cms-actions mt-7">
+            <CtaLink
+              label={content.ctaLabel}
+              url={content.ctaUrl}
+              variant={mainCtaVariant(ctx)}
+              role="primary"
+              size="md"
+            />
+          </div>
+        ) : null}
       </div>
 
       <div className={cn(content.imagePosition === 'left' && 'lg:order-1')}>
