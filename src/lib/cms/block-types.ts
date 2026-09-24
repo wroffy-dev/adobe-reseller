@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type { FieldDescriptor } from './fields';
+import type { FormFieldGroup } from './form-style';
 
 /**
  * Block registry types, kept separate from the registry itself.
@@ -67,6 +68,11 @@ export type BlockDefinition = {
   icon: string;
   schema: z.ZodTypeAny;
   fields: FieldDescriptor[];
+  /**
+   * The Form tab, for a block that embeds a form: restyles that one placement
+   * of it. Absent on every block without a form, so the tab does not show.
+   */
+  formFields?: FormFieldGroup[];
   /** Surfaces whose "Add section" picker offers this block. Defaults to pages. */
   surfaces?: BlockSurface[];
   /**

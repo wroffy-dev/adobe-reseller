@@ -17,6 +17,7 @@ import { BLOG_BLOCKS } from './blog-blocks';
 import { PRODUCT_BLOCKS } from './product-blocks';
 import { SLIDER_BLOCKS } from './slider-blocks';
 import { productSourceFields } from './product-source';
+import { formStyleField, formStyleGroups, FORM_PICKER_HELP } from './form-style';
 
 /**
  * Block registry.
@@ -64,6 +65,8 @@ const cssLength = z.string().max(16).default('');
 
 // --- hero ------------------------------------------------------------------
 const heroSchema = z.object({
+  /** This placement's Form tab. Blank keeps the form's own design. */
+  formStyle: formStyleField,
   /** Chooses which optional slots the hero renders. */
   layout: z
     .enum(['content', 'contentImage', 'contentForm', 'contentImageForm', 'backgroundImage'])
@@ -242,6 +245,8 @@ const testimonialsSchema = z.object({
 
 // --- cta -------------------------------------------------------------------
 const ctaSchema = z.object({
+  /** This placement's Form tab. Blank keeps the form's own design. */
+  formStyle: formStyleField,
   eyebrow: z.string().max(120).default(''),
   heading: z.string().max(240).default(''),
   description: z.string().max(800).default(''),
@@ -276,6 +281,8 @@ const ctaSchema = z.object({
 
 // --- leadMagnet ------------------------------------------------------------
 const leadMagnetSchema = z.object({
+  /** This placement's Form tab. Blank keeps the form's own design. */
+  formStyle: formStyleField,
   leadMagnetSlug: z.string().max(120).default(''),
   heading: z.string().max(240).default(''),
   description: z.string().max(800).default(''),
@@ -294,6 +301,8 @@ const leadMagnetSchema = z.object({
 
 // --- formBlock -------------------------------------------------------------
 const formBlockSchema = z.object({
+  /** This placement's Form tab. Blank keeps the form's own design. */
+  formStyle: formStyleField,
   heading: z.string().max(240).default(''),
   description: z.string().max(800).default(''),
   formSlug: z.string().max(120).default(''),
@@ -610,6 +619,7 @@ const PAGE_BLOCKS: Record<string, BlockDefinition> = {
     group: 'Content',
     icon: 'layout-template',
     schema: heroSchema,
+    formFields: formStyleGroups({ heading: 'formHeading', description: 'formDescription' }),
     fields: [
       {
         kind: 'select',
@@ -660,7 +670,7 @@ const PAGE_BLOCKS: Record<string, BlockDefinition> = {
         name: 'formSlug',
         label: 'Form',
         width: 'half',
-        help: 'Shown by the “Content + form” layouts. Choose any active form.',
+        help: `Shown by the “Content + form” layouts. ${FORM_PICKER_HELP}`,
       },
       {
         kind: 'text',
@@ -668,13 +678,6 @@ const PAGE_BLOCKS: Record<string, BlockDefinition> = {
         label: 'Tracking label',
         width: 'half',
         help: 'Optional. Names this placement on leads it captures, e.g. homepage_hero. Separate from UTM campaign tracking.',
-      },
-      { kind: 'text', name: 'formHeading', label: 'Form heading', width: 'half' },
-      {
-        kind: 'textarea',
-        name: 'formDescription',
-        label: 'Form description',
-        rows: 2,
       },
     ],
   },
@@ -953,6 +956,7 @@ const PAGE_BLOCKS: Record<string, BlockDefinition> = {
     icon: 'megaphone',
     surfaces: ['page', 'blogListing', 'blogArticle'],
     schema: ctaSchema,
+    formFields: formStyleGroups(),
     fields: [
       {
         kind: 'text',
@@ -992,7 +996,7 @@ const PAGE_BLOCKS: Record<string, BlockDefinition> = {
         name: 'formSlug',
         label: 'Inline form',
         width: 'half',
-        help: 'Used by the split layout',
+        help: `Used by the split layout. ${FORM_PICKER_HELP}`,
       },
       {
         kind: 'text',
@@ -1143,6 +1147,7 @@ const PAGE_BLOCKS: Record<string, BlockDefinition> = {
     icon: 'gift',
     surfaces: ['page', 'blogListing', 'blogArticle'],
     schema: leadMagnetSchema,
+    formFields: formStyleGroups({ buttonLabel: 'ctaLabel' }),
     fields: [
       {
         kind: 'text',
@@ -1153,7 +1158,7 @@ const PAGE_BLOCKS: Record<string, BlockDefinition> = {
       { kind: 'text', name: 'heading', label: 'Heading override' },
       { kind: 'textarea', name: 'description', label: 'Description override', rows: 2 },
       { kind: 'media', name: 'imageId', label: 'Image override', width: 'half' },
-      { kind: 'form', name: 'formSlug', label: 'Form override', width: 'half' },
+      { kind: 'form', name: 'formSlug', label: 'Form override', width: 'half', help: FORM_PICKER_HELP },
       {
         kind: 'text',
         name: 'ctaLocation',
@@ -1161,7 +1166,6 @@ const PAGE_BLOCKS: Record<string, BlockDefinition> = {
         width: 'half',
         help: 'Optional. Names this placement on leads it captures, e.g. homepage_hero. Separate from UTM campaign tracking.',
       },
-      { kind: 'text', name: 'ctaLabel', label: 'Button label', width: 'half' },
     ],
   },
 
@@ -1173,10 +1177,11 @@ const PAGE_BLOCKS: Record<string, BlockDefinition> = {
     icon: 'clipboard-list',
     surfaces: ['page', 'blogListing', 'blogArticle'],
     schema: formBlockSchema,
+    formFields: formStyleGroups(),
     fields: [
       { kind: 'text', name: 'heading', label: 'Heading' },
       { kind: 'textarea', name: 'description', label: 'Description', rows: 2 },
-      { kind: 'form', name: 'formSlug', label: 'Form', width: 'half' },
+      { kind: 'form', name: 'formSlug', label: 'Form', width: 'half', help: FORM_PICKER_HELP },
       {
         kind: 'text',
         name: 'ctaLocation',

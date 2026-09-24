@@ -197,11 +197,18 @@ describe('product surfaces', () => {
     // Picked from the forms that exist, never typed by hand.
     expect(named('formSlug')?.kind).toBe('form');
 
-    // The three that only make sense once the form is on stay out of the way.
-    for (const name of ['formSlug', 'formHeading', 'formPosition']) {
+    // The two that only make sense once the form is on stay out of the way.
+    for (const name of ['formSlug', 'formPosition']) {
       expect(named(name)?.showWhen, name).toEqual({ field: 'showForm', equals: [true] });
     }
     expect(named('showForm')?.showWhen).toBeUndefined();
+
+    // The form's heading moved to the Form tab, with the rest of its look.
+    expect(named('formHeading')).toBeUndefined();
+    const formTab = (PRODUCT_BLOCKS.productPriceBox.formFields ?? []).flatMap((group) =>
+      group.fields.map((field) => field.name),
+    );
+    expect(formTab).toContain('formHeading');
   });
 
   it('parses each product block to usable defaults', () => {

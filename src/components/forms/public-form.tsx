@@ -60,6 +60,7 @@ export function PublicFormRenderer({
   className,
   compact,
   context,
+  instanceKey,
 }: {
   form: PublicForm;
   productId?: string | null;
@@ -76,8 +77,16 @@ export function PublicFormRenderer({
    * nothing about a submission depends on what this prop contains.
    */
   context?: Record<string, string>;
+  /**
+   * The placement this is — a section id, a widget id. The same form twice on
+   * one page gets its own scoped styles and its own field ids from it, so its
+   * hover rules stay its own and its labels point at its own inputs. The
+   * form's slug is still what is submitted.
+   */
+  instanceKey?: string;
 }) {
   const router = useRouter();
+  const scope = instanceKey ? `${form.slug}-${instanceKey}` : form.slug;
   const [pending, setPending] = React.useState(false);
   /*
    * The one consent box. Unticked on mount and never seeded from anything: a
@@ -94,8 +103,8 @@ export function PublicFormRenderer({
 
   const design = form.design;
   const styles = React.useMemo<FormStyles>(
-    () => buildFormStyles(design, form.slug),
-    [design, form.slug],
+    () => buildFormStyles(design, scope),
+    [design, scope],
   );
 
   /**
@@ -328,7 +337,7 @@ export function PublicFormRenderer({
               <FormFieldRow
                 key={field.id}
                 field={field}
-                formSlug={form.slug}
+                formSlug={scope}
                 styles={styles}
                 errors={fieldErrors[field.name]}
                 showRequiredMark={design.label.showRequiredMark}
@@ -387,9 +396,9 @@ export function PublicFormRenderer({
 
         {/* Honeypot — hidden from users and screen readers, filled by bots. */}
         <div aria-hidden="true" className="absolute left-[-9999px] h-0 w-0 overflow-hidden">
-          <label htmlFor={`hp-${form.slug}`}>Leave this field empty</label>
+          <label htmlFor={`hp-${scope}`}>Leave this field empty</label>
           <input
-            id={`hp-${form.slug}`}
+            id={`hp-${scope}`}
             type="text"
             name="website"
             tabIndex={-1}
@@ -402,7 +411,7 @@ export function PublicFormRenderer({
           checked={consentAccepted}
           onChange={setConsentAccepted}
           errors={fieldErrors}
-          idPrefix={form.slug}
+          idPrefix={scope}
         />
 
         {/* The legacy free-text line, for forms written before the notice. */}

@@ -212,6 +212,8 @@ export function SectionEditorPanel({
       <AdminTabs
         tabs={[
           { id: 'content', label: 'Content' },
+          // Only for a block that embeds a form.
+          ...(definition.formFields ? [{ id: 'form', label: 'Form' }] : []),
           { id: 'design', label: 'Design' },
           { id: 'responsive', label: 'Responsive' },
           { id: 'advanced', label: 'Advanced' },
@@ -236,6 +238,31 @@ export function SectionEditorPanel({
               }
             />
           </TabPanel>
+
+          {definition.formFields ? (
+            <TabPanel id="form" active={tab} className="space-y-4">
+              <p className="text-xs text-muted">
+                Restyles the form in this section only. Anything left blank keeps the form’s own
+                design from Forms, and other pages using the same form are not affected.
+              </p>
+              {definition.formFields.map((group) => (
+                <fieldset key={group.title} className="rounded-lg border border-hairline p-3">
+                  <legend className="px-1 text-sm font-medium text-content">{group.title}</legend>
+                  <FieldList
+                    fields={group.fields}
+                    values={content}
+                    idPrefix={`f-${section.id}`}
+                    onChange={(field, value) =>
+                      edit(`content:${field}`, {
+                        ...draft,
+                        content: writeFieldPath(content, field, value) as FieldValues,
+                      })
+                    }
+                  />
+                </fieldset>
+              ))}
+            </TabPanel>
+          ) : null}
 
           <TabPanel id="design" active={tab}>
             <DesignPanel

@@ -3,9 +3,9 @@ import type { HeroContent } from '@/lib/cms/blocks';
 import { getMedia } from '@/lib/services/media';
 import { getPublicForm } from '@/lib/services/forms';
 import { resolveCmsIcon } from '@/components/ui/icons';
-import { PublicFormRenderer } from '@/components/forms/public-form';
 import { cn } from '@/lib/utils/cn';
 import { SectionHeading, CtaLink, CmsImage, type BlockContext } from './shared';
+import { FormPanel } from './form-panel';
 
 /**
  * Hero.
@@ -114,17 +114,17 @@ export async function HeroBlock({ content, ctx }: { content: HeroContent; ctx: B
   );
 
   const formPanel = showForm ? (
-    <div className="cms-surface rounded-[var(--layout-card-radius)] border border-hairline bg-surface p-6 shadow-xl sm:p-7">
-      {content.formHeading ? (
-        <h2 className="font-heading text-lg font-semibold text-content">{content.formHeading}</h2>
-      ) : null}
-      {content.formDescription ? (
-        <p className="mt-1.5 text-sm leading-relaxed text-muted">{content.formDescription}</p>
-      ) : null}
-      <div className={cn(content.formHeading || content.formDescription ? 'mt-5' : undefined)}>
-        <PublicFormRenderer form={form!} ctaLocation={content.ctaLocation || 'hero'} compact />
-      </div>
-    </div>
+    <FormPanel
+      form={form!}
+      formStyle={content.formStyle}
+      instanceKey={ctx.sectionId}
+      cardClassName="cms-surface rounded-[var(--layout-card-radius)] border border-hairline bg-surface p-6 shadow-xl sm:p-7"
+      heading={content.formHeading}
+      description={content.formDescription}
+      headingAs="h2"
+      ctaLocation={content.ctaLocation || 'hero'}
+      compact
+    />
   ) : null;
 
   const picture = showImage ? (
