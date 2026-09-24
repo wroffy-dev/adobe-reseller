@@ -200,6 +200,9 @@ const websiteSettingsSchema = z.object({
   buttonSecondaryHoverBg: optionalColor,
   buttonSecondaryHoverText: optionalColor,
   buttonSecondaryHoverBorder: optionalColor,
+  // A role's own shape; blank follows the shared buttonRadius.
+  buttonPrimaryRadius: optionalLength,
+  buttonSecondaryRadius: optionalLength,
 
   colorPrimary: hexColor,
   colorSecondary: hexColor,

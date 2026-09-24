@@ -180,8 +180,8 @@ describe('wiring', () => {
     const form = read('src/components/admin/settings/settings-form.tsx');
     expect(fields).toContain('BUTTON_COLOR_KEYS.map');
     expect(form).toContain("set('buttonBorderWidth'");
-    expect(form).toContain('<ButtonRoleFields role="primary"');
-    expect(form).toContain('<ButtonRoleFields role="secondary"');
+    expect(form).toContain('<ButtonRoleFields');
+    expect(form).toContain("(['primary', 'secondary'] as const).map");
   });
 
   it('injects the stylesheet on the public site', () => {

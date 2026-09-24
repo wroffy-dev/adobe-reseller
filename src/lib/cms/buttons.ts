@@ -54,6 +54,8 @@ export type ButtonSettings = {
   buttonSecondaryHoverBg?: Value;
   buttonSecondaryHoverText?: Value;
   buttonSecondaryHoverBorder?: Value;
+  buttonPrimaryRadius?: Value;
+  buttonSecondaryRadius?: Value;
 };
 
 /** One role's colours. An empty string is "not set". */
@@ -74,6 +76,29 @@ const EMPTY_LOOK: ButtonLook = {
   hoverText: '',
   hoverBorder: '',
 };
+
+/**
+ * Button shapes, picked by sight. Each preset is only a radius, so a shape is
+ * stored as the length it stands for and anything else is a custom radius.
+ */
+export const BUTTON_SHAPES = [
+  { id: 'square', label: 'Square', radius: '0px' },
+  { id: 'slight', label: 'Slightly rounded', radius: '0.25rem' },
+  { id: 'rounded', label: 'Rounded', radius: '0.5rem' },
+  { id: 'pill', label: 'Pill', radius: '999px' },
+] as const;
+export type ButtonShape = (typeof BUTTON_SHAPES)[number];
+
+/** The preset a radius is, or null for a custom (or blank) one. */
+export function buttonShapeOf(radius: string | null | undefined): ButtonShape | null {
+  const value = (radius ?? '').trim();
+  return BUTTON_SHAPES.find((shape) => shape.radius === value) ?? null;
+}
+
+/** `buttonPrimaryRadius` or `buttonSecondaryRadius`. */
+export function roleRadiusField(role: ButtonRole) {
+  return role === 'primary' ? 'buttonPrimaryRadius' : 'buttonSecondaryRadius';
+}
 
 /** The six colour fields of a role, in the order the admin shows them. */
 export const BUTTON_COLOR_KEYS = [
@@ -247,6 +272,9 @@ export function buttonStylesheet(settings: ButtonSettings): string {
     const selector = `:root .btn-tokens.${BUTTON_ROLE_CLASS[role]}`;
 
     const normal = declarations(look.background, look.text, look.border, width);
+    // The role's own shape, only when it has one; blank follows buttonRadius.
+    const radius = cssLength(settings[roleRadiusField(role)]);
+    if (radius) normal.push(`border-radius:${radius}`);
     const hover = declarations(look.hoverBackground, look.hoverText, look.hoverBorder, width);
 
     if (normal.length > 0) blocks.push(`${selector}{${normal.join(';')}}`);

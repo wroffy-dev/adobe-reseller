@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { MediaUrlPicker } from './media-url-picker';
 import { ColorField } from './color-field';
 import { ButtonRoleFields, ButtonPreview } from './button-role-fields';
+import { ButtonShapePicker } from './button-shape-picker';
 import { FontSelect, FontWeightSelect } from './font-select';
 import { IconSelect } from '@/components/cms/icon-select';
 import { Alert } from '@/components/ui/states';
@@ -706,14 +707,13 @@ export function WebsiteSettingsForm({
                     below take their colours from here too.
                   </p>
                   <div className="grid gap-4 sm:grid-cols-2">
-                    <Field label="Button radius" htmlFor="buttonRadius" error={errors.buttonRadius}>
-                      <Input
-                        id="buttonRadius"
-                        value={str('buttonRadius')}
-                        placeholder="0.5rem"
-                        onChange={(e) => set('buttonRadius', e.target.value)}
-                      />
-                    </Field>
+                    <ButtonShapePicker
+                      id="buttonRadius"
+                      label="Button shape"
+                      value={str('buttonRadius')}
+                      error={errors.buttonRadius}
+                      onChange={(v) => set('buttonRadius', v)}
+                    />
                     <Field label="Text transform" htmlFor="buttonTextTransform">
                       <Select
                         id="buttonTextTransform"
@@ -765,8 +765,27 @@ export function WebsiteSettingsForm({
                   </div>
                 </fieldset>
 
-                <ButtonRoleFields role="primary" values={values} errors={errors} onChange={set} />
-                <ButtonRoleFields role="secondary" values={values} errors={errors} onChange={set} />
+                {(['primary', 'secondary'] as const).map((role) => {
+                  const field = role === 'primary' ? 'buttonPrimaryRadius' : 'buttonSecondaryRadius';
+                  return (
+                    <ButtonRoleFields
+                      key={role}
+                      role={role}
+                      values={values}
+                      errors={errors}
+                      onChange={set}
+                    >
+                      <ButtonShapePicker
+                        id={field}
+                        label="Shape"
+                        inheritLabel="Same as all buttons"
+                        value={str(field)}
+                        error={errors[field]}
+                        onChange={(v) => set(field, v)}
+                      />
+                    </ButtonRoleFields>
+                  );
+                })}
               </>
             ) : null}
 

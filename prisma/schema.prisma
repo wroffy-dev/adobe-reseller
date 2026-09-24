@@ -2172,6 +2172,9 @@ model WebsiteSettings {
   buttonSecondaryHoverBg     String @default("")
   buttonSecondaryHoverText   String @default("")
   buttonSecondaryHoverBorder String @default("")
+  /// A role's own button shape. Blank follows the shared buttonRadius.
+  buttonPrimaryRadius        String @default("")
+  buttonSecondaryRadius      String @default("")
 
   // Misc
   defaultCurrency String  @default("INR")
