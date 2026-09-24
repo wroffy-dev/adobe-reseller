@@ -454,6 +454,37 @@
     color: var(--sec-button, rgb(var(--brand-primary)));
     background-color: transparent;
   }
+
+  /*
+    Three layers, each outranking the one before whatever order the sheets
+    load in: the defaults above (two classes), Website Design's Primary and
+    Secondary buttons (`:root .btn-tokens.btn-role-x`, three), and a section's
+    own Button colour and Button text colour from its Design tab (five, below,
+    only under the modifier the section carries when it chose one).
+  */
+  :root .cms-section.cms-section--button .btn-tokens.cms-btn-primary {
+    background-color: var(--sec-button);
+    border-color: var(--sec-button);
+  }
+  :root .cms-section.cms-section--button .btn-tokens.cms-btn-primary:hover {
+    background-color: color-mix(in srgb, var(--sec-button) 88%, #000);
+    border-color: color-mix(in srgb, var(--sec-button) 88%, #000);
+  }
+  :root .cms-section.cms-section--button-text .btn-tokens.cms-btn-primary,
+  :root .cms-section.cms-section--button-text .btn-tokens.cms-btn-primary:hover {
+    color: var(--sec-button-text);
+  }
+  :root .cms-section.cms-section--button .btn-tokens.cms-btn-outline {
+    background-color: transparent;
+    border-color: var(--sec-button);
+    color: var(--sec-button);
+  }
+  :root .cms-section.cms-section--button .btn-tokens.cms-btn-outline:hover {
+    background-color: color-mix(in srgb, var(--sec-button) 12%, transparent);
+  }
+  /* The quiet second button on a dark section takes the section's text colour. */
+  .cms-section .cms-btn-ghost { color: inherit; }
+
   .cms-section .cms-accent { color: var(--sec-primary, rgb(var(--brand-primary))); }
   .cms-section .prose-cms a { color: var(--sec-link, rgb(var(--brand-primary))); }
 

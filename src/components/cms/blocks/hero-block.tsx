@@ -4,7 +4,7 @@ import { getMedia } from '@/lib/services/media';
 import { getPublicForm } from '@/lib/services/forms';
 import { resolveCmsIcon } from '@/components/ui/icons';
 import { cn } from '@/lib/utils/cn';
-import { SectionHeading, CtaLink, CmsImage, type BlockContext } from './shared';
+import { SectionHeading, CtaLink, CmsImage, type BlockContext, mainCtaVariant } from './shared';
 import { FormPanel } from './form-panel';
 
 /**
@@ -76,7 +76,8 @@ export async function HeroBlock({ content, ctx }: { content: HeroContent; ctx: B
           <CtaLink
             label={content.primaryCtaLabel}
             url={content.primaryCtaUrl}
-            variant={inverted ? 'outline' : 'primary'}
+            variant={mainCtaVariant(ctx, inverted)}
+            role="primary"
           />
           <CtaLink
             label={content.secondaryCtaLabel}

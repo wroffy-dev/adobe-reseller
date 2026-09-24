@@ -5,7 +5,7 @@ import { getPublicForm, getDefaultForm } from '@/lib/services/forms';
 import { getMedia } from '@/lib/services/media';
 import { cn } from '@/lib/utils/cn';
 import { Check } from 'lucide-react';
-import { SectionHeading, CtaLink, type BlockContext } from './shared';
+import { SectionHeading, CtaLink, type BlockContext, mainCtaVariant } from './shared';
 import { FormPanel } from './form-panel';
 import { buildPanelStyles } from '@/lib/cms/design';
 
@@ -44,6 +44,7 @@ export async function CtaBlock({ content, ctx }: { content: CtaContent; ctx: Blo
             label={content.primaryCtaLabel}
             url={content.primaryCtaUrl}
             variant={variantFor.primary}
+            role="primary"
           />
         ) : null}
         {showSecondary ? (
@@ -74,7 +75,8 @@ export async function CtaBlock({ content, ctx }: { content: CtaContent; ctx: Blo
                   <CtaLink
                     label={content.primaryCtaLabel}
                     url={content.primaryCtaUrl}
-                    variant={inverted ? 'outline' : 'primary'}
+                    variant={mainCtaVariant(ctx)}
+                    role="primary"
                   />
                 ) : null}
                 {showSecondary ? (
@@ -142,7 +144,7 @@ export async function CtaBlock({ content, ctx }: { content: CtaContent; ctx: Blo
               {buttonRow(
                 usingCustom
                   ? { primary: 'primary', secondary: 'outline' }
-                  : { primary: 'outline', secondary: 'ghost' },
+                  : { primary: mainCtaVariant(ctx, true), secondary: 'ghost' },
               )}
             </div>
           ) : null}
@@ -164,7 +166,7 @@ export async function CtaBlock({ content, ctx }: { content: CtaContent; ctx: Blo
       {hasButtons ? (
         <div className="mt-8">
           {buttonRow({
-            primary: inverted ? 'outline' : 'primary',
+            primary: mainCtaVariant(ctx),
             secondary: inverted ? 'ghost' : 'outline',
           })}
         </div>

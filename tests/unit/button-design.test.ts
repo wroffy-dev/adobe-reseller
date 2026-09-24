@@ -41,9 +41,11 @@ describe('buttonStylesheet', () => {
 
   it('puts a primary background in the primary rule only, with a darkened hover', () => {
     const css = buttonStylesheet({ ...DEFAULTS, buttonPrimaryBg: '#ff0000' });
-    expect(css).toContain(`${PRIMARY}{background-color:#FF0000;border-color:#FF0000}`);
+    // The fill brings the role's own text colour, so an outline-drawn primary
+    // on a dark section does not keep its outline text on the new fill.
+    expect(css).toContain(`${PRIMARY}{background-color:#FF0000;color:#FFFFFF;border-color:#FF0000}`);
     expect(css).toContain(
-      `${PRIMARY}:hover{background-color:color-mix(in srgb, #FF0000 88%, #000);border-color:color-mix(in srgb, #FF0000 88%, #000)}`,
+      `${PRIMARY}:hover{background-color:color-mix(in srgb, #FF0000 88%, #000);color:#FFFFFF;border-color:color-mix(in srgb, #FF0000 88%, #000)}`,
     );
     expect(css).not.toContain('btn-role-secondary');
   });

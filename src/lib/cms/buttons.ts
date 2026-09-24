@@ -202,6 +202,17 @@ export function buttonLook(settings: ButtonSettings, role: ButtonRole): ButtonLo
   if (typed.background) {
     look.background = typed.background;
     look.hoverBackground = darken(typed.background);
+    /*
+     * A new fill brings the role's text colour with it. A role's button is not
+     * always drawn in the role's own variant — a dark section draws its main
+     * call to action as an outline — and without this the outline's text
+     * would sit on the new fill: blue on red.
+     */
+    if (!look.text) {
+      const base = defaultLook(settings, role);
+      look.text = base.text;
+      look.hoverText = base.hoverText;
+    }
   }
   if (typed.text) {
     look.text = typed.text;

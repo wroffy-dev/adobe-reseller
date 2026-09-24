@@ -4,6 +4,7 @@ import NextImage from 'next/image';
 import { cn } from '@/lib/utils/cn';
 import { safeUrl, sanitizeHtml } from '@/lib/utils/sanitize';
 import { buttonClasses, type ButtonVariant } from '@/components/ui/button';
+import type { ButtonRole } from '@/lib/cms/buttons';
 import type { ResolvedMedia } from '@/lib/services/media';
 import type { SectionDesign } from '@/lib/cms/design';
 import { resolveColumns, gridStyle } from '@/lib/cms/design';
@@ -151,6 +152,19 @@ export function SectionHeading({
 }
 
 /**
+ * The variant a block's main call to action is drawn in.
+ *
+ * On a dark section the main button has always been an outline, so it reads
+ * against the background. A section that chose its own Button colour gets a
+ * filled button in that colour instead. `dark` defaults to the section's own
+ * darkness; a block that paints a dark surface of its own — a backdrop hero,
+ * the CTA's brand panel — passes it.
+ */
+export function mainCtaVariant(ctx: BlockContext, dark: boolean = ctx.inverted): 'primary' | 'outline' {
+  return dark && !ctx.design.colors.button ? 'outline' : 'primary';
+}
+
+/**
  * Renders a CTA only when both a label and a safe URL are present.
  *
  * Primary and outline buttons pick up the section's own button colour through
@@ -162,12 +176,19 @@ export function CtaLink({
   variant = 'primary',
   size = 'lg',
   className,
+  role,
 }: {
   label?: string | null;
   url?: string | null;
   variant?: ButtonVariant;
   size?: 'sm' | 'md' | 'lg';
   className?: string;
+  /**
+   * The Website Design role, when it is not the variant's own: a block's main
+   * call to action passes "primary", so it takes the Primary button design
+   * even where a dark section draws it as an outline.
+   */
+  role?: ButtonRole;
 }) {
   const href = safeUrl(url);
   if (!label?.trim() || !href) return null;
@@ -178,11 +199,12 @@ export function CtaLink({
     'btn-tokens',
     variant === 'primary' && 'cms-btn-primary',
     variant === 'outline' && 'cms-btn-outline',
+    variant === 'ghost' && 'cms-btn-ghost',
   );
   return (
     <Link
       href={href}
-      className={buttonClasses(variant, size, cn(tone, className))}
+      className={buttonClasses(variant, size, cn(tone, className), role)}
       {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
     >
       {label}

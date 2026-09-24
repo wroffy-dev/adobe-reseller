@@ -18,6 +18,7 @@ import {
   type BlockContext,
   columnVars,
   blockColumnVars,
+  mainCtaVariant,
 } from './shared';
 
 export function RichTextBlock({ content, ctx }: { content: RichTextContent; ctx: BlockContext }) {
@@ -68,7 +69,8 @@ export async function ImageContentBlock({
           <CtaLink
             label={content.ctaLabel}
             url={content.ctaUrl}
-            variant={inverted ? 'outline' : 'primary'}
+            variant={mainCtaVariant(ctx)}
+            role="primary"
             size="md"
           />
         </div>

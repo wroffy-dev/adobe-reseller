@@ -524,6 +524,12 @@ export type SectionStyles = {
   } | null;
   overlay: string | null;
   inverted: boolean;
+  /**
+   * `cms-section--button` when the section chose a button colour and
+   * `cms-section--button-text` when it chose a button text colour; empty
+   * otherwise. The section's own button rules only apply under these.
+   */
+  modifiers: string;
 };
 
 /**
@@ -578,9 +584,21 @@ export function buildSectionStyles(
   if (heading) style['--sec-heading-color'] = heading;
   style['--sec-primary'] = design.colors.primary || 'rgb(var(--brand-primary))';
   style['--sec-secondary'] = design.colors.secondary || 'rgb(var(--brand-secondary))';
-  style['--sec-button'] =
-    design.colors.button || design.colors.primary || 'rgb(var(--brand-primary))';
-  style['--sec-button-text'] = design.colors.buttonText || '#FFFFFF';
+  /*
+   * The button colours only when the section chose them. Always setting them —
+   * to the brand colour when blank — meant every section "had" a button colour,
+   * so nothing chaining through var(--sec-button, …) ever showed the Website
+   * Design one. The modifiers below are what the stronger rules key on.
+   */
+  const sectionButton = design.colors.button || design.colors.primary;
+  if (sectionButton) style['--sec-button'] = sectionButton;
+  if (design.colors.buttonText) style['--sec-button-text'] = design.colors.buttonText;
+  const modifiers = [
+    sectionButton ? 'cms-section--button' : '',
+    design.colors.buttonText ? 'cms-section--button-text' : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
   style['--sec-link'] = design.colors.link || design.colors.primary || 'rgb(var(--brand-primary))';
 
   const layerImage = backgroundLayer(design, backgroundImageUrl);
@@ -613,6 +631,7 @@ export function buildSectionStyles(
       : null,
     overlay,
     inverted,
+    modifiers,
   };
 }
 
