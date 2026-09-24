@@ -135,19 +135,25 @@ export const SIDEBAR_WIDTHS = ['25%', '30%', '35%', '40%'] as const;
  * Quick choices for the product page's container width.
  *
  * Blank inherits the website's own container, like every other blank here.
- * "Wide" is the header's default width, so a product page set to it lines its
- * content up with the logo and the menu. Anything else is a custom length.
+ * "Match the header" follows whatever width Settings gives the header, so the
+ * product page lines up with the logo and the menu even after that changes.
+ * Anything else is a custom length.
  */
+/** Stored instead of a length: "as wide as the header, whatever that is". */
+export const HEADER_WIDTH = 'header';
+
 export const CONTAINER_WIDTH_PRESETS = [
   { value: '', label: 'Website default' },
   { value: '48rem', label: 'Narrow — 768px' },
-  { value: '80rem', label: 'Wide — 1280px, lines up with the header' },
+  { value: HEADER_WIDTH, label: 'Match the header' },
   { value: '100%', label: 'Full width' },
 ] as const;
 export const MOBILE_SIDEBAR = ['below', 'above', 'hidden'] as const;
 
 export const productLayoutSchema = z.object({
-  containerWidth: length.default(''),
+  containerWidth: z
+    .preprocess((raw) => (raw === HEADER_WIDTH ? raw : normaliseLength(raw)), z.string())
+    .default(''),
   sectionGap: length.default(''),
 
   // --- the two columns ---
@@ -356,7 +362,12 @@ export function productImageVars(image: ProductImageSettings): Record<string, st
 /** CSS custom properties for the page's own frame and palette overrides. */
 export function productLayoutVars(layout: ProductLayoutSettings): Record<string, string> {
   const vars: Record<string, string> = {};
-  if (layout.containerWidth) vars['--product-container'] = layout.containerWidth;
+  if (layout.containerWidth) {
+    // The header's width is a `:root` variable, so "match the header" is a
+    // reference to it rather than a copy that goes stale when it changes.
+    vars['--product-container'] =
+      layout.containerWidth === HEADER_WIDTH ? 'var(--header-width, 80rem)' : layout.containerWidth;
+  }
   if (layout.sectionGap) vars['--product-section-gap'] = layout.sectionGap;
   vars['--product-sidebar-width'] = layout.sidebarWidth || '33%';
   if (layout.sidebarGap) vars['--product-sidebar-gap'] = layout.sidebarGap;

@@ -75,15 +75,15 @@ and "Other plans" blocks each carry these variables down with them.
 ### Page width and full-width sections
 
 **Layout → Container width** is a list: *Website default* (blank — the
-website's own container), *Narrow* (768px), *Wide* (1280px, the header's
-default width, so the page lines up with the logo and the menu), *Full width*
-(100%), or *Custom* for any CSS length.
+website's own container), *Narrow* (768px), *Match the header* (whatever
+width Settings gives the header, so the page lines up with the logo and the
+menu), *Full width* (100%), or *Custom* for any CSS length.
 
 A section on a product page can also leave the boxed column altogether: on its
 **Responsive** tab, under *Width & height*, **Stretch to the screen edges**.
 Its background then runs edge to edge and its content sits in the same
-container as a page's sections, lined up with the header at any width or zoom
-— no negative margins. It is how a product page opens with a full-width hero.
+container as a page's sections — exactly as the homepage's do — at any width
+or zoom, with no negative margins. Leave its *Layout* on *Boxed* for that. It is how a product page opens with a full-width hero.
 
 With a sidebar, only stretched sections at the very top or bottom of the page
 break out; one in between shares its row with the sidebar and stays in its
