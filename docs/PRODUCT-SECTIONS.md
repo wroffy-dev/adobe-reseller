@@ -85,6 +85,10 @@ Its background then runs edge to edge and its content sits in the same
 container as a page's sections — exactly as the homepage's do — at any width
 or zoom, with no negative margins. Leave its *Layout* on *Boxed* for that. It is how a product page opens with a full-width hero.
 
+A **Hero** always does this on a product page, with no switch to turn on: it
+renders exactly like the homepage's hero. Leave its *Layout* on *Boxed* and
+its margins blank.
+
 With a sidebar, only stretched sections at the very top or bottom of the page
 break out; one in between shares its row with the sidebar and stays in its
 column. Without a sidebar, any stretched section breaks out where it stands.

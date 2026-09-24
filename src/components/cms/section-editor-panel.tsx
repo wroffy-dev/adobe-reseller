@@ -282,7 +282,8 @@ export function SectionEditorPanel({
               view="responsive"
               idPrefix={`r-${section.id}`}
               takenAnchors={takenAnchors}
-              offerStretch={surface === 'productDetail'}
+              // A hero on a product page always stretches, so it is not offered the switch.
+              offerStretch={surface === 'productDetail' && section.blockType !== 'hero'}
               supports={definition.design}
               onChange={(next: SectionDesign) =>
                 edit('settings:responsive', { ...draft, settings: next as unknown as FieldValues })

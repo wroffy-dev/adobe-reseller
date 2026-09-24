@@ -10,7 +10,7 @@ import { countryBreadcrumbSchema, productSchema } from '@/lib/seo/structured-dat
 import { SectionList, type RenderableSection } from '@/components/cms/section-renderer';
 import { getProductSections, getProductSettings } from '@/lib/services/product-cms';
 import { productStyleVars, type ProductLayoutSettings } from '@/lib/cms/product-settings';
-import { parseSectionDesign } from '@/lib/cms/design';
+import { segmentDetail } from '@/lib/cms/product-segments';
 import type { ProductRenderContext } from '@/lib/cms/product-render';
 import { cn } from '@/lib/utils/cn';
 import type { CountryContext } from '@/lib/country/types';
@@ -151,71 +151,6 @@ export async function ProductSurface({
       />
     </div>
   );
-}
-
-type Segment = {
-  key: string;
-  stretch: boolean;
-  sections: RenderableSection[];
-  withSidebar: boolean;
-};
-
-/**
- * Splits the product's sections into runs that sit in the boxed column and
- * runs that are stretched to the screen edges.
- *
- * Without a sidebar every stretched section breaks out where it stands. With
- * one, only the stretched sections at the very top and bottom can: a section
- * beside the sidebar shares its row with the sidebar, so it stays in its
- * column. There is always a boxed run when there is a sidebar, even an empty
- * one, because that run is where the sidebar lives.
- */
-function segmentDetail(detail: RenderableSection[], withSidebar: boolean): Segment[] {
-  const visible = detail
-    .filter((section) => section.isVisible)
-    .sort((a, b) => a.sortOrder - b.sortOrder);
-  const stretched = visible.map((section) => parseSectionDesign(section.settings).stretch);
-
-  if (withSidebar) {
-    let head = 0;
-    while (head < visible.length && stretched[head]) head += 1;
-    let tail = visible.length;
-    while (tail > head && stretched[tail - 1]) tail -= 1;
-
-    const segments: Segment[] = [];
-    if (head > 0) {
-      segments.push({ key: 'top', stretch: true, sections: visible.slice(0, head), withSidebar: false });
-    }
-    segments.push({
-      key: 'main',
-      stretch: false,
-      sections: visible.slice(head, tail),
-      withSidebar: true,
-    });
-    if (tail < visible.length) {
-      segments.push({ key: 'bottom', stretch: true, sections: visible.slice(tail), withSidebar: false });
-    }
-    return segments;
-  }
-
-  const segments: Segment[] = [];
-  visible.forEach((section, index) => {
-    const last = segments[segments.length - 1];
-    if (last && last.stretch === stretched[index]) {
-      last.sections.push(section);
-    } else {
-      segments.push({
-        key: section.id,
-        stretch: stretched[index]!,
-        sections: [section],
-        withSidebar: false,
-      });
-    }
-  });
-  // A product with nothing visible still renders the (empty) boxed column.
-  return segments.length > 0
-    ? segments
-    : [{ key: 'main', stretch: false, sections: [], withSidebar: false }];
 }
 
 /**
