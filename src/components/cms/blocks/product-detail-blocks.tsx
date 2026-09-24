@@ -20,7 +20,7 @@ import { safeUrl } from '@/lib/utils/sanitize';
 import { cn } from '@/lib/utils/cn';
 import { ProductCta } from '@/components/products/product-cta';
 import { ProductCard } from '@/components/products/product-card';
-import { PublicFormRenderer } from '@/components/forms/public-form';
+import { FormPanel } from './form-panel';
 import {
   RichText,
   SectionHeading,
@@ -557,29 +557,28 @@ export async function ProductPriceBoxBlock({
   const form = formSlug ? await getPublicForm(formSlug, ctx.country.id) : null;
 
   const formBody = form ? (
-    <>
-      {content.formHeading ? (
-        <p className="mb-3 font-heading text-sm font-semibold text-content">
-          {content.formHeading}
-        </p>
-      ) : null}
-      <PublicFormRenderer
-        form={form}
-        productId={product.id}
-        /* A sidebar is narrow, so the grid collapses unless the form's own
-           design asks for more. */
-        compact
-        ctaLocation="product-price-box"
-        /* Shown so the enquiry is unambiguous. What the server records is
-           resolved from productId, never from here. */
-        context={{
-          product_id: product.id,
-          product_name: product.name,
-          product_slug: product.slug,
-          plan: product.name,
-        }}
-      />
-    </>
+    <FormPanel
+      form={form}
+      formStyle={content.formStyle}
+      instanceKey={ctx.sectionId}
+      heading={content.formHeading}
+      headingAs="p"
+      headingClassName="mb-3 font-heading text-sm font-semibold text-content"
+      bodyClassName=""
+      productId={product.id}
+      /* A sidebar is narrow, so the grid collapses unless the form's own
+         design asks for more. */
+      compact
+      ctaLocation="product-price-box"
+      /* Shown so the enquiry is unambiguous. What the server records is
+         resolved from productId, never from here. */
+      context={{
+        product_id: product.id,
+        product_name: product.name,
+        product_slug: product.slug,
+        plan: product.name,
+      }}
+    />
   ) : null;
 
   return (
@@ -630,13 +629,15 @@ export async function ProductPriceBoxBlock({
       )}
 
       {content.showCta ? (
-        <ProductCta
-          product={product}
-          label={content.ctaLabel || undefined}
-          size="lg"
-          className="mt-6 w-full"
-          ctaLocation="product-page"
-        />
+        <div className="cms-actions mt-6">
+          <ProductCta
+            product={product}
+            label={content.ctaLabel || undefined}
+            size="lg"
+            className="w-full"
+            ctaLocation="product-page"
+          />
+        </div>
       ) : null}
 
       {specs.length > 0 ? (

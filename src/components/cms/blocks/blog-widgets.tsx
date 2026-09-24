@@ -38,7 +38,7 @@ import { prisma } from '@/lib/db/prisma';
 import { selectProducts } from '@/lib/services/products';
 import { getMedia } from '@/lib/services/media';
 import { getPublicForm, getDefaultForm } from '@/lib/services/forms';
-import { PublicFormRenderer } from '@/components/forms/public-form';
+import { FormPanel } from './form-panel';
 import { TableOfContents } from '@/components/blog/table-of-contents';
 import { BlogSearch } from '@/components/blog/blog-search';
 import { AuthorBox } from '@/components/blog/author-box';
@@ -365,8 +365,10 @@ export async function WidgetForm({ content, ctx, id }: WidgetProps<WidgetFormCon
 
   return (
     <WidgetShell chrome={chromeOf(content)} headingId={id}>
-      <PublicFormRenderer
+      <FormPanel
         form={form}
+        formStyle={content.formStyle}
+        instanceKey={id}
         compact
         ctaLocation={content.ctaLocation || 'blog_sidebar'}
       />

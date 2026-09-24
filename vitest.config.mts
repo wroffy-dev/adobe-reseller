@@ -1,9 +1,13 @@
 import { defineConfig } from 'vitest/config';
 import path from 'node:path';
+import react from '@vitejs/plugin-react';
 
 const root = import.meta.dirname;
 
 export default defineConfig({
+  // Next.js keeps JSX as-is (`jsx: preserve`), so a test that imports a
+  // component needs its own transform.
+  plugins: [react()],
   test: {
     environment: 'node',
     globals: true,

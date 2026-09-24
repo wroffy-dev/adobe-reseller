@@ -85,6 +85,9 @@ const hex = z
   .transform((v) => normaliseColor(v))
   .default('');
 
+export const BUTTON_POSITIONS = ['inherit', 'left', 'center', 'right', 'full'] as const;
+export type ButtonPosition = (typeof BUTTON_POSITIONS)[number];
+
 /** Everything that can differ between desktop, tablet and mobile. */
 const breakpointSchema = z.object({
   margin: boxSchema.default(EMPTY_BOX),
@@ -102,6 +105,12 @@ const breakpointSchema = z.object({
   imageWidth: length.default(''),
   imageHeight: length.default(''),
   hidden: z.coerce.boolean().catch(false).default(false),
+  /**
+   * Where the section's buttons sit — Elementor's "Position": left, centre,
+   * right or stretched across the row. Inherit leaves the larger screen's
+   * choice, or on desktop the block's own layout.
+   */
+  buttonPosition: z.enum(BUTTON_POSITIONS).catch('inherit').default('inherit'),
 });
 
 export type BreakpointDesign = z.infer<typeof breakpointSchema>;
@@ -524,7 +533,38 @@ export type SectionStyles = {
   } | null;
   overlay: string | null;
   inverted: boolean;
+  /**
+   * `cms-section--button` when the section chose a button colour and
+   * `cms-section--button-text` when it chose a button text colour; empty
+   * otherwise. The section's own button rules only apply under these.
+   */
+  modifiers: string;
 };
+
+/**
+ * The rules for one breakpoint's button position, scoped to the section.
+ *
+ * `.cms-actions` is every row of call-to-action buttons a block draws; an
+ * embedded form's submit follows along through `.cms-form-follow` unless the
+ * form's own Form tab chose an alignment. Left, centre and right undo a
+ * larger screen's stretch and give the form back its own button width.
+ */
+export function buttonPositionCss(className: string, position: ButtonPosition): string {
+  if (position === 'inherit') return '';
+  const scope = `.${className}`;
+  if (position === 'full') {
+    return (
+      `${scope} .cms-actions>.btn-tokens{width:100%}` +
+      `${scope} .cms-form-follow .fd-submit{width:100%}`
+    );
+  }
+  const justify = { left: 'flex-start', center: 'center', right: 'flex-end' }[position];
+  return (
+    `${scope} .cms-actions,${scope} .cms-form-follow .fd-actions{justify-content:${justify}}` +
+    `${scope} .cms-actions>.btn-tokens{width:auto}` +
+    `${scope} .cms-form-follow .fd-submit{width:var(--fd-btn-w, auto)}`
+  );
+}
 
 /**
  * Turns one section's design into everything the renderer needs.
@@ -578,9 +618,21 @@ export function buildSectionStyles(
   if (heading) style['--sec-heading-color'] = heading;
   style['--sec-primary'] = design.colors.primary || 'rgb(var(--brand-primary))';
   style['--sec-secondary'] = design.colors.secondary || 'rgb(var(--brand-secondary))';
-  style['--sec-button'] =
-    design.colors.button || design.colors.primary || 'rgb(var(--brand-primary))';
-  style['--sec-button-text'] = design.colors.buttonText || '#FFFFFF';
+  /*
+   * The button colours only when the section chose them. Always setting them —
+   * to the brand colour when blank — meant every section "had" a button colour,
+   * so nothing chaining through var(--sec-button, …) ever showed the Website
+   * Design one. The modifiers below are what the stronger rules key on.
+   */
+  const sectionButton = design.colors.button || design.colors.primary;
+  if (sectionButton) style['--sec-button'] = sectionButton;
+  if (design.colors.buttonText) style['--sec-button-text'] = design.colors.buttonText;
+  const modifiers = [
+    sectionButton ? 'cms-section--button' : '',
+    design.colors.buttonText ? 'cms-section--button-text' : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
   style['--sec-link'] = design.colors.link || design.colors.primary || 'rgb(var(--brand-primary))';
 
   const layerImage = backgroundLayer(design, backgroundImageUrl);
@@ -589,13 +641,18 @@ export function buildSectionStyles(
       ? hexToRgba(design.background.overlayColor, design.background.overlayOpacity)
       : null;
 
-  const blocks: string[] = [];
+  const blocks: string[] = [buttonPositionCss(className, design.desktop.buttonPosition)];
   for (const bp of ['tablet', 'mobile'] as const) {
     const vars = breakpointVars(design[bp], false);
     const entries = Object.entries(vars);
-    if (entries.length === 0) continue;
-    const decls = entries.map(([key, value]) => `${key}:${value}`).join(';');
-    blocks.push(`@media (max-width:${BREAKPOINT_MAX_WIDTH[bp]}px){.${className}{${decls}}}`);
+    const rules = [
+      entries.length > 0
+        ? `.${className}{${entries.map(([key, value]) => `${key}:${value}`).join(';')}}`
+        : '',
+      buttonPositionCss(className, design[bp].buttonPosition),
+    ].join('');
+    if (!rules) continue;
+    blocks.push(`@media (max-width:${BREAKPOINT_MAX_WIDTH[bp]}px){${rules}}`);
   }
 
   return {
@@ -613,6 +670,7 @@ export function buildSectionStyles(
       : null,
     overlay,
     inverted,
+    modifiers,
   };
 }
 

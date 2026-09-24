@@ -316,13 +316,15 @@ export async function ProductTableBlock({
               </th>
               {products.map((product) => (
                 <td key={product.id} className="border-l border-hairline px-5 py-4">
-                  <ProductCta
-                    product={product}
-                    label={content.ctaLabel}
-                    size="sm"
-                    className="w-full"
-                    ctaLocation="product-table"
-                  />
+                  <div className="cms-actions">
+                    <ProductCta
+                      product={product}
+                      label={content.ctaLabel}
+                      size="sm"
+                      className="w-full"
+                      ctaLocation="product-table"
+                    />
+                  </div>
                 </td>
               ))}
             </tr>
@@ -390,12 +392,14 @@ export async function ProductTableBlock({
               </div>
             ) : null}
 
-            <ProductCta
-              product={product}
-              label={content.ctaLabel}
-              className="mt-5 w-full"
-              ctaLocation="product-table"
-            />
+            <div className="cms-actions mt-5">
+              <ProductCta
+                product={product}
+                label={content.ctaLabel}
+                className="w-full"
+                ctaLocation="product-table"
+              />
+            </div>
           </article>
         ))}
       </div>

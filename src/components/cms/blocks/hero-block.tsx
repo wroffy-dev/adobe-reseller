@@ -3,9 +3,10 @@ import type { HeroContent } from '@/lib/cms/blocks';
 import { getMedia } from '@/lib/services/media';
 import { getPublicForm } from '@/lib/services/forms';
 import { resolveCmsIcon } from '@/components/ui/icons';
-import { PublicFormRenderer } from '@/components/forms/public-form';
 import { cn } from '@/lib/utils/cn';
-import { SectionHeading, CtaLink, CmsImage, type BlockContext } from './shared';
+import { SectionHeading, CtaLink, CmsImage, type BlockContext, mainCtaVariant, ctaVisible } from './shared';
+import { FormPanel } from './form-panel';
+import { heroColumns, heroTextShare } from '@/lib/cms/hero';
 
 /**
  * Hero.
@@ -31,6 +32,9 @@ export async function HeroBlock({ content, ctx }: { content: HeroContent; ctx: B
   const bullets = content.bullets.filter(Boolean);
   const badges = content.badges.filter((badge) => badge.label);
 
+  // The text's share of a two-column hero; 50 is the original equal grid.
+  const textShare = heroTextShare(content);
+
   // Only a content-only hero centres by default; a two-column hero reads better left-aligned.
   const centred = isBackdrop || (content.alignment === 'center' && !showImage && !showForm);
 
@@ -43,7 +47,8 @@ export async function HeroBlock({ content, ctx }: { content: HeroContent; ctx: B
         description={content.description}
         align={centred ? 'center' : 'left'}
         inverted={inverted}
-        className={centred ? undefined : 'max-w-xl'}
+        // A chosen split gives the text its whole column.
+        className={centred || textShare !== 50 ? undefined : 'max-w-xl'}
       />
 
       {bullets.length > 0 ? (
@@ -71,12 +76,14 @@ export async function HeroBlock({ content, ctx }: { content: HeroContent; ctx: B
         </ul>
       ) : null}
 
-      {content.primaryCtaLabel || content.secondaryCtaLabel ? (
-        <div className={cn('mt-9 flex flex-wrap gap-3', centred && 'justify-center')}>
+      {ctaVisible(content.primaryCtaLabel, content.primaryCtaUrl) ||
+      ctaVisible(content.secondaryCtaLabel, content.secondaryCtaUrl) ? (
+        <div className={cn('cms-actions mt-9', centred && 'justify-center')}>
           <CtaLink
             label={content.primaryCtaLabel}
             url={content.primaryCtaUrl}
-            variant={inverted ? 'outline' : 'primary'}
+            variant={mainCtaVariant(ctx, inverted)}
+            role="primary"
           />
           <CtaLink
             label={content.secondaryCtaLabel}
@@ -114,17 +121,17 @@ export async function HeroBlock({ content, ctx }: { content: HeroContent; ctx: B
   );
 
   const formPanel = showForm ? (
-    <div className="cms-surface rounded-[var(--layout-card-radius)] border border-hairline bg-surface p-6 shadow-xl sm:p-7">
-      {content.formHeading ? (
-        <h2 className="font-heading text-lg font-semibold text-content">{content.formHeading}</h2>
-      ) : null}
-      {content.formDescription ? (
-        <p className="mt-1.5 text-sm leading-relaxed text-muted">{content.formDescription}</p>
-      ) : null}
-      <div className={cn(content.formHeading || content.formDescription ? 'mt-5' : undefined)}>
-        <PublicFormRenderer form={form!} ctaLocation={content.ctaLocation || 'hero'} compact />
-      </div>
-    </div>
+    <FormPanel
+      form={form!}
+      formStyle={content.formStyle}
+      instanceKey={ctx.sectionId}
+      cardClassName="cms-surface rounded-[var(--layout-card-radius)] border border-hairline bg-surface p-6 shadow-xl sm:p-7"
+      heading={content.formHeading}
+      description={content.formDescription}
+      headingAs="h2"
+      ctaLocation={content.ctaLocation || 'hero'}
+      compact
+    />
   ) : null;
 
   const picture = showImage ? (
@@ -188,8 +195,20 @@ export async function HeroBlock({ content, ctx }: { content: HeroContent; ctx: B
       aside
     );
 
+  const asideFirst = content.imagePlacement === 'left';
+
   return (
-    <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-14">
+    <div
+      className={cn(
+        'grid items-center gap-10 lg:gap-14',
+        textShare === 50 ? 'lg:grid-cols-2' : 'lg:grid-cols-[var(--hero-cols)]',
+      )}
+      style={
+        textShare === 50
+          ? undefined
+          : ({ '--hero-cols': heroColumns(textShare, asideFirst) } as React.CSSProperties)
+      }
+    >
       <div className={cn(content.imagePlacement === 'left' && 'lg:order-2')}>{copy}</div>
       <div className={cn(content.imagePlacement === 'left' && 'lg:order-1')}>{asideContent}</div>
     </div>

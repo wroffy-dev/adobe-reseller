@@ -377,7 +377,7 @@ export async function SectionRenderer({
       <section
         id={anchorId || design.anchorId || undefined}
         data-block={section.blockType}
-        className={`cms-section ${!container && painted ? 'cms-section--card ' : ''}${styles.className}`}
+        className={`cms-section ${!container && painted ? 'cms-section--card ' : ''}${styles.className}${styles.modifiers ? ` ${styles.modifiers}` : ''}`}
         style={styles.style as React.CSSProperties}
       >
         {styles.layer ? (

@@ -8,6 +8,7 @@ import { Dialog } from '@/components/ui/dialog';
 import { PublicFormLoader } from '@/components/forms/form-loader';
 import { safeUrl } from '@/lib/utils/sanitize';
 import { trackConversion } from '@/lib/analytics/attribution';
+import { cn } from '@/lib/utils/cn';
 
 /**
  * Product call-to-action.
@@ -39,7 +40,7 @@ export function ProductCta({
     return (
       <Link
         href={href}
-        className={buttonClasses(variant, size, className)}
+        className={buttonClasses(variant, size, cn('btn-tokens', className))}
         onClick={() => trackConversion('select_item', { item_name: product.name, cta: ctaLabel })}
       >
         {ctaLabel}
@@ -50,7 +51,7 @@ export function ProductCta({
   if (!product.ctaFormSlug) {
     // No form and no URL configured — send the visitor to the product page.
     return (
-      <Link href={product.href} className={buttonClasses(variant, size, className)}>
+      <Link href={product.href} className={buttonClasses(variant, size, cn('btn-tokens', className))}>
         {ctaLabel}
       </Link>
     );
@@ -61,7 +62,8 @@ export function ProductCta({
       <Button
         variant={variant}
         size={size}
-        className={className}
+        // A public button: it takes Website Design's button settings.
+        className={cn('btn-tokens', className)}
         onClick={() => {
           trackConversion('select_item', { item_name: product.name, cta: ctaLabel });
           setOpen(true);

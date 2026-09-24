@@ -183,6 +183,26 @@ const websiteSettingsSchema = z.object({
   buttonPrimaryStyle: z.enum(['solid', 'outline', 'soft']).catch('solid').default('solid'),
   buttonSecondaryStyle: z.enum(['solid', 'outline', 'soft']).catch('outline').default('outline'),
   buttonTextTransform: z.enum(['none', 'uppercase', 'capitalize']).catch('none').default('none'),
+  /*
+   * The Primary and Secondary button designs. Every one may be blank, and
+   * blank means "take it from the role's style and the theme".
+   */
+  buttonBorderWidth: optionalLength,
+  buttonPrimaryBg: optionalColor,
+  buttonPrimaryText: optionalColor,
+  buttonPrimaryBorder: optionalColor,
+  buttonPrimaryHoverBg: optionalColor,
+  buttonPrimaryHoverText: optionalColor,
+  buttonPrimaryHoverBorder: optionalColor,
+  buttonSecondaryBg: optionalColor,
+  buttonSecondaryText: optionalColor,
+  buttonSecondaryBorder: optionalColor,
+  buttonSecondaryHoverBg: optionalColor,
+  buttonSecondaryHoverText: optionalColor,
+  buttonSecondaryHoverBorder: optionalColor,
+  // A role's own shape; blank follows the shared buttonRadius.
+  buttonPrimaryRadius: optionalLength,
+  buttonSecondaryRadius: optionalLength,
 
   colorPrimary: hexColor,
   colorSecondary: hexColor,

@@ -43,7 +43,7 @@ import {
 } from '@/lib/services/blog';
 import { getMedia } from '@/lib/services/media';
 import { getPublicForm, getDefaultForm } from '@/lib/services/forms';
-import { PublicFormRenderer } from '@/components/forms/public-form';
+import { FormPanel } from './form-panel';
 import { PostCard } from '@/components/blog/post-card';
 import { CategoryChips } from '@/components/blog/category-chips';
 import { BlogSearch } from '@/components/blog/blog-search';
@@ -54,7 +54,7 @@ import { Pagination } from '@/components/blog/pagination';
 import { EmptyState } from '@/components/ui/states';
 import { formatDate, initials } from '@/lib/utils/format';
 import { cn } from '@/lib/utils/cn';
-import { SectionHeading, CtaLink, type BlockContext } from './shared';
+import { SectionHeading, CtaLink, type BlockContext, mainCtaVariant, ctaVisible } from './shared';
 
 /**
  * Blog block renderers.
@@ -158,14 +158,15 @@ export async function BlogHeroBlock({ content, ctx }: { content: BlogHeroContent
       {content.showCta ? (
         <div
           className={cn(
-            'mt-7 flex flex-wrap gap-3',
+            'cms-actions mt-7',
             content.contentAlign === 'center' && 'justify-center',
           )}
         >
           <CtaLink
             label={content.ctaLabel}
             url={content.ctaUrl}
-            variant={ctx.inverted ? 'outline' : 'primary'}
+            variant={mainCtaVariant(ctx)}
+            role="primary"
           />
           <CtaLink
             label={content.secondaryCtaLabel}
@@ -461,8 +462,8 @@ export async function BlogFeaturedBlock({
         className="mt-6"
       />
 
-      {content.showCta ? (
-        <div className="mt-6">
+      {content.showCta && ctaVisible(content.ctaLabel, href) ? (
+        <div className="cms-actions mt-6">
           <CtaLink label={content.ctaLabel} url={href} variant="primary" size="md" />
         </div>
       ) : null}
@@ -702,8 +703,8 @@ export async function BlogGridBlock({ content, ctx }: { content: BlogGridContent
         />
       ) : null}
 
-      {content.ctaLabel ? (
-        <div className="flex justify-center">
+      {ctaVisible(content.ctaLabel, content.ctaUrl) ? (
+        <div className="cms-actions justify-center">
           <CtaLink label={content.ctaLabel} url={content.ctaUrl} variant="outline" size="md" />
         </div>
       ) : null}
@@ -762,18 +763,20 @@ export async function BlogNewsletterBlock({
 
   const copy = <Heading content={content} ctx={ctx} />;
   const formPanel = (
-    <div className="min-w-0">
-      <PublicFormRenderer
-        form={form}
-        ctaLocation={content.ctaLocation || 'blog_newsletter'}
-        compact={content.layout === 'inline'}
-      />
+    <FormPanel
+      form={form}
+      formStyle={content.formStyle}
+      instanceKey={ctx.sectionId}
+      className="min-w-0"
+      ctaLocation={content.ctaLocation || 'blog_newsletter'}
+      compact={content.layout === 'inline'}
+    >
       {content.footnote ? (
         <p className={cn('mt-3 text-xs', ctx.inverted ? 'text-white/60' : 'text-muted')}>
           {content.footnote}
         </p>
       ) : null}
-    </div>
+    </FormPanel>
   );
 
   return (

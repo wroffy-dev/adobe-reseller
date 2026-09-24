@@ -3,10 +3,10 @@ import { prisma } from '@/lib/db/prisma';
 import type { CtaContent, FormBlockContent, LeadMagnetContent } from '@/lib/cms/blocks';
 import { getPublicForm, getDefaultForm } from '@/lib/services/forms';
 import { getMedia } from '@/lib/services/media';
-import { PublicFormRenderer } from '@/components/forms/public-form';
 import { cn } from '@/lib/utils/cn';
 import { Check } from 'lucide-react';
-import { SectionHeading, CtaLink, type BlockContext } from './shared';
+import { SectionHeading, CtaLink, type BlockContext, mainCtaVariant, ctaVisible } from './shared';
+import { FormPanel } from './form-panel';
 import { buildPanelStyles } from '@/lib/cms/design';
 
 export async function CtaBlock({ content, ctx }: { content: CtaContent; ctx: BlockContext }) {
@@ -29,8 +29,10 @@ export async function CtaBlock({ content, ctx }: { content: CtaContent; ctx: Blo
   const justifyClass =
     align === 'left' ? 'justify-start' : align === 'right' ? 'justify-end' : 'justify-center';
 
-  const showPrimary = content.showPrimaryCta && Boolean(content.primaryCtaLabel);
-  const showSecondary = content.showSecondaryCta && Boolean(content.secondaryCtaLabel);
+  const showPrimary =
+    content.showPrimaryCta && ctaVisible(content.primaryCtaLabel, content.primaryCtaUrl);
+  const showSecondary =
+    content.showSecondaryCta && ctaVisible(content.secondaryCtaLabel, content.secondaryCtaUrl);
   const hasButtons = showPrimary || showSecondary;
 
   const buttonRow = (variantFor: {
@@ -38,12 +40,13 @@ export async function CtaBlock({ content, ctx }: { content: CtaContent; ctx: Blo
     secondary: 'outline' | 'ghost';
   }) =>
     hasButtons ? (
-      <div className={cn('flex flex-wrap gap-3', justifyClass)}>
+      <div className={cn('cms-actions', justifyClass)}>
         {showPrimary ? (
           <CtaLink
             label={content.primaryCtaLabel}
             url={content.primaryCtaUrl}
             variant={variantFor.primary}
+            role="primary"
           />
         ) : null}
         {showSecondary ? (
@@ -69,12 +72,13 @@ export async function CtaBlock({ content, ctx }: { content: CtaContent; ctx: Blo
           />
           {hasButtons ? (
             <div className="mt-7">
-              <div className="flex flex-wrap gap-3">
+              <div className="cms-actions">
                 {showPrimary ? (
                   <CtaLink
                     label={content.primaryCtaLabel}
                     url={content.primaryCtaUrl}
-                    variant={inverted ? 'outline' : 'primary'}
+                    variant={mainCtaVariant(ctx)}
+                    role="primary"
                   />
                 ) : null}
                 {showSecondary ? (
@@ -88,13 +92,14 @@ export async function CtaBlock({ content, ctx }: { content: CtaContent; ctx: Blo
             </div>
           ) : null}
         </div>
-        <div className="cms-surface rounded-2xl border border-hairline bg-surface p-6 shadow-lg sm:p-8">
-          <PublicFormRenderer
-            form={form}
-            ctaLocation={content.ctaLocation || 'cta-block'}
-            compact
-          />
-        </div>
+        <FormPanel
+          form={form}
+          formStyle={content.formStyle}
+          instanceKey={ctx.sectionId}
+          cardClassName="cms-surface rounded-2xl border border-hairline bg-surface p-6 shadow-lg sm:p-8"
+          ctaLocation={content.ctaLocation || 'cta-block'}
+          compact
+        />
       </div>
     );
   }
@@ -141,7 +146,7 @@ export async function CtaBlock({ content, ctx }: { content: CtaContent; ctx: Blo
               {buttonRow(
                 usingCustom
                   ? { primary: 'primary', secondary: 'outline' }
-                  : { primary: 'outline', secondary: 'ghost' },
+                  : { primary: mainCtaVariant(ctx, true), secondary: 'ghost' },
               )}
             </div>
           ) : null}
@@ -163,7 +168,7 @@ export async function CtaBlock({ content, ctx }: { content: CtaContent; ctx: Blo
       {hasButtons ? (
         <div className="mt-8">
           {buttonRow({
-            primary: inverted ? 'outline' : 'primary',
+            primary: mainCtaVariant(ctx),
             secondary: inverted ? 'ghost' : 'outline',
           })}
         </div>
@@ -193,9 +198,13 @@ export async function FormBlock({
   }
 
   const formPanel = (
-    <div className="cms-surface rounded-2xl border border-hairline bg-surface p-6 shadow-sm sm:p-8">
-      <PublicFormRenderer form={form} ctaLocation={content.ctaLocation || 'form-block'} />
-    </div>
+    <FormPanel
+      form={form}
+      formStyle={content.formStyle}
+      instanceKey={ctx.sectionId}
+      cardClassName="cms-surface rounded-2xl border border-hairline bg-surface p-6 shadow-sm sm:p-8"
+      ctaLocation={content.ctaLocation || 'form-block'}
+    />
   );
 
   if (content.layout === 'split') {
@@ -322,11 +331,11 @@ export async function LeadMagnetBlock({
 
       <div>
         {form ? (
-          <PublicFormRenderer
-            form={{
-              ...form,
-              submitLabel: content.ctaLabel || magnet?.ctaLabel || form.submitLabel,
-            }}
+          <FormPanel
+            form={form}
+            formStyle={content.formStyle}
+            instanceKey={ctx.sectionId}
+            buttonLabel={content.ctaLabel || magnet?.ctaLabel || null}
             leadMagnetId={magnet?.id ?? null}
             compact
             ctaLocation={content.ctaLocation || 'lead-magnet'}

@@ -8,6 +8,7 @@ import {
   type BlockDefinition,
 } from './block-types';
 import type { FieldDescriptor } from './fields';
+import { formStyleField, formStyleGroups, FORM_PICKER_HELP } from './form-style';
 
 /**
  * Blog blocks.
@@ -311,6 +312,8 @@ const blogPaginationSchema = z.object({
 });
 
 const blogNewsletterSchema = z.object({
+  /** This placement's Form tab. Blank keeps the form's own design. */
+  formStyle: formStyleField,
   ...headingSchema,
   formSlug: z.string().max(120).catch('').default(''),
   ctaLocation: z.string().max(120).catch('').default(''),
@@ -577,6 +580,8 @@ const widgetTagsSchema = z.object({
 });
 
 const widgetFormSchema = z.object({
+  /** This placement's Form tab. Blank keeps the form's own design. */
+  formStyle: formStyleField,
   ...widgetBase,
   formSlug: z.string().max(120).catch('').default(''),
   ctaLocation: z.string().max(120).catch('').default(''),
@@ -693,6 +698,7 @@ export const BLOG_BLOCKS: Record<string, BlockDefinition> = {
     icon: 'layout-template',
     surfaces: ['blogListing'],
     schema: blogHeroSchema,
+    design: ['buttons'],
     fields: [
       { kind: 'boolean', name: 'showHeading', label: 'Show heading', width: 'half' },
       { kind: 'boolean', name: 'showSubtitle', label: 'Show subtitle', width: 'half' },
@@ -864,6 +870,7 @@ export const BLOG_BLOCKS: Record<string, BlockDefinition> = {
     icon: 'star',
     surfaces: ['blogListing'],
     schema: blogFeaturedSchema,
+    design: ['buttons'],
     fields: [
       ...headingFields,
       {
@@ -933,6 +940,7 @@ export const BLOG_BLOCKS: Record<string, BlockDefinition> = {
     icon: 'grid-3x3',
     surfaces: ['blogListing', 'blogArticle'],
     schema: blogGridSchema,
+    design: ['buttons'],
     fields: [
       ...headingFields,
       ...postSourceFields,
@@ -995,6 +1003,8 @@ export const BLOG_BLOCKS: Record<string, BlockDefinition> = {
     icon: 'megaphone',
     surfaces: ['blogListing', 'blogArticle'],
     schema: blogNewsletterSchema,
+    design: ['buttons'],
+    formFields: formStyleGroups(),
     fields: [
       ...headingFields,
       {
@@ -1008,7 +1018,7 @@ export const BLOG_BLOCKS: Record<string, BlockDefinition> = {
           { label: 'Centred', value: 'centered' },
         ],
       },
-      { kind: 'form', name: 'formSlug', label: 'Form', width: 'half' },
+      { kind: 'form', name: 'formSlug', label: 'Form', width: 'half', help: FORM_PICKER_HELP },
       {
         kind: 'text',
         name: 'ctaLocation',
@@ -1410,9 +1420,11 @@ export const BLOG_BLOCKS: Record<string, BlockDefinition> = {
     icon: 'clipboard-list',
     surfaces: ['blogSidebar'],
     schema: widgetFormSchema,
+    design: ['buttons'],
+    formFields: formStyleGroups({ card: false }),
     fields: [
       ...widgetBaseFields,
-      { kind: 'form', name: 'formSlug', label: 'Form', width: 'half' },
+      { kind: 'form', name: 'formSlug', label: 'Form', width: 'half', help: FORM_PICKER_HELP },
       {
         kind: 'boolean',
         name: 'preferPostForm',
@@ -1438,9 +1450,11 @@ export const BLOG_BLOCKS: Record<string, BlockDefinition> = {
     icon: 'megaphone',
     surfaces: ['blogSidebar'],
     schema: widgetFormSchema,
+    design: ['buttons'],
+    formFields: formStyleGroups({ card: false }),
     fields: [
       ...widgetBaseFields,
-      { kind: 'form', name: 'formSlug', label: 'Form', width: 'half' },
+      { kind: 'form', name: 'formSlug', label: 'Form', width: 'half', help: FORM_PICKER_HELP },
       { kind: 'text', name: 'ctaLocation', label: 'Tracking label', width: 'half' },
       ...widgetPanelFields,
     ],

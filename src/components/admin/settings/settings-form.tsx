@@ -8,6 +8,8 @@ import { Field, Input, Textarea, Select, Switch } from '@/components/ui/field';
 import { Button } from '@/components/ui/button';
 import { MediaUrlPicker } from './media-url-picker';
 import { ColorField } from './color-field';
+import { ButtonRoleFields, ButtonPreview } from './button-role-fields';
+import { ButtonShapePicker } from './button-shape-picker';
 import { FontSelect, FontWeightSelect } from './font-select';
 import { IconSelect } from '@/components/cms/icon-select';
 import { Alert } from '@/components/ui/states';
@@ -381,16 +383,9 @@ export function WebsiteSettingsForm({
                     <p className="mt-1 text-xs" style={{ color: str('colorMuted') }}>
                       Supporting copy uses the muted colour.
                     </p>
-                    <span
-                      className="mt-3 inline-flex text-xs font-medium text-white"
-                      style={{
-                        background: str('colorPrimary'),
-                        borderRadius: str('buttonRadius') || '0.5rem',
-                        padding: `${str('buttonPaddingY') || '0.625rem'} ${str('buttonPaddingX') || '1.25rem'}`,
-                      }}
-                    >
-                      Primary button
-                    </span>
+                    <div className="mt-3">
+                      <ButtonPreview values={values} role="primary" />
+                    </div>
                   </div>
                 </fieldset>
               </>
@@ -707,37 +702,18 @@ export function WebsiteSettingsForm({
 
                 <fieldset className="space-y-4 rounded-lg border border-hairline p-4">
                   <legend className="px-1 text-sm font-medium text-content">Buttons</legend>
+                  <p className="text-xs text-muted">
+                    Shared by every button on the website. The Primary and Secondary buttons
+                    below take their colours from here too.
+                  </p>
                   <div className="grid gap-4 sm:grid-cols-2">
-                    <Field label="Primary button style" htmlFor="buttonPrimaryStyle">
-                      <Select
-                        id="buttonPrimaryStyle"
-                        value={str('buttonPrimaryStyle')}
-                        onChange={(e) => set('buttonPrimaryStyle', e.target.value)}
-                      >
-                        <option value="solid">Solid</option>
-                        <option value="outline">Outline</option>
-                        <option value="soft">Soft tint</option>
-                      </Select>
-                    </Field>
-                    <Field label="Secondary button style" htmlFor="buttonSecondaryStyle">
-                      <Select
-                        id="buttonSecondaryStyle"
-                        value={str('buttonSecondaryStyle')}
-                        onChange={(e) => set('buttonSecondaryStyle', e.target.value)}
-                      >
-                        <option value="solid">Solid</option>
-                        <option value="outline">Outline</option>
-                        <option value="soft">Soft tint</option>
-                      </Select>
-                    </Field>
-                    <Field label="Button radius" htmlFor="buttonRadius" error={errors.buttonRadius}>
-                      <Input
-                        id="buttonRadius"
-                        value={str('buttonRadius')}
-                        placeholder="0.5rem"
-                        onChange={(e) => set('buttonRadius', e.target.value)}
-                      />
-                    </Field>
+                    <ButtonShapePicker
+                      id="buttonRadius"
+                      label="Button shape"
+                      value={str('buttonRadius')}
+                      error={errors.buttonRadius}
+                      onChange={(v) => set('buttonRadius', v)}
+                    />
                     <Field label="Text transform" htmlFor="buttonTextTransform">
                       <Select
                         id="buttonTextTransform"
@@ -773,8 +749,43 @@ export function WebsiteSettingsForm({
                         onChange={(e) => set('buttonPaddingY', e.target.value)}
                       />
                     </Field>
+                    <Field
+                      label="Border width"
+                      htmlFor="buttonBorderWidth"
+                      error={errors.buttonBorderWidth}
+                      hint="Blank keeps 1px wherever a button has a border."
+                    >
+                      <Input
+                        id="buttonBorderWidth"
+                        value={str('buttonBorderWidth')}
+                        placeholder="1px"
+                        onChange={(e) => set('buttonBorderWidth', e.target.value)}
+                      />
+                    </Field>
                   </div>
                 </fieldset>
+
+                {(['primary', 'secondary'] as const).map((role) => {
+                  const field = role === 'primary' ? 'buttonPrimaryRadius' : 'buttonSecondaryRadius';
+                  return (
+                    <ButtonRoleFields
+                      key={role}
+                      role={role}
+                      values={values}
+                      errors={errors}
+                      onChange={set}
+                    >
+                      <ButtonShapePicker
+                        id={field}
+                        label="Shape"
+                        inheritLabel="Same as all buttons"
+                        value={str(field)}
+                        error={errors[field]}
+                        onChange={(v) => set(field, v)}
+                      />
+                    </ButtonRoleFields>
+                  );
+                })}
               </>
             ) : null}
 

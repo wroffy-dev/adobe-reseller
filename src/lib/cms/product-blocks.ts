@@ -4,6 +4,7 @@ import {
   responsiveColumnFields,
   type BlockDefinition,
 } from './block-types';
+import { formStyleField, formStyleGroups, FORM_PICKER_HELP } from './form-style';
 
 /**
  * Product blocks.
@@ -196,6 +197,8 @@ const productPriceBoxSchema = z.object({
   formSlug: z.string().max(120).catch('').default(''),
   formHeading: heading(''),
   formPosition: z.enum(['below', 'above']).catch('below').default('below'),
+  /** This placement's Form tab. Blank keeps the form's own design. */
+  formStyle: formStyleField,
 });
 
 // ---------------------------------------------------------------------------
@@ -547,6 +550,8 @@ export const PRODUCT_BLOCKS: Record<string, BlockDefinition> = {
     surfaces: ['productSidebar'],
     singleton: true,
     schema: productPriceBoxSchema,
+    design: ['buttons'],
+    formFields: formStyleGroups({ heading: 'formHeading', card: false }),
     fields: [
       { kind: 'boolean', name: 'showMonthly', label: 'Show the monthly price', width: 'half' },
       { kind: 'boolean', name: 'showAnnual', label: 'Show the annual price', width: 'half' },
@@ -592,15 +597,7 @@ export const PRODUCT_BLOCKS: Record<string, BlockDefinition> = {
         label: 'Form',
         width: 'half',
         showWhen: { field: 'showForm', equals: [true] },
-        help: "Leave empty to use the product's own enquiry form.",
-      },
-      {
-        kind: 'text',
-        name: 'formHeading',
-        label: 'Form heading',
-        width: 'half',
-        showWhen: { field: 'showForm', equals: [true] },
-        placeholder: 'Optional',
+        help: `Leave empty to use the product's own enquiry form. ${FORM_PICKER_HELP}`,
       },
     ],
   },
