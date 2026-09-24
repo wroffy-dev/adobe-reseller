@@ -9,7 +9,8 @@ import { JsonLd } from '@/components/seo/json-ld';
 import { countryBreadcrumbSchema, productSchema } from '@/lib/seo/structured-data';
 import { SectionList, type RenderableSection } from '@/components/cms/section-renderer';
 import { getProductSections, getProductSettings } from '@/lib/services/product-cms';
-import { productStyleVars } from '@/lib/cms/product-settings';
+import { productStyleVars, type ProductLayoutSettings } from '@/lib/cms/product-settings';
+import { parseSectionDesign } from '@/lib/cms/design';
 import type { ProductRenderContext } from '@/lib/cms/product-render';
 import { cn } from '@/lib/utils/cn';
 import type { CountryContext } from '@/lib/country/types';
@@ -96,42 +97,38 @@ export async function ProductSurface({
 
   const { layout } = settings;
   const withSidebar = layout.sidebarEnabled && sidebar.some((section) => section.isVisible);
+  const segments = segmentDetail(detail, withSidebar);
 
   return (
     <div
       className="product-surface"
       style={productStyleVars(settings) as React.CSSProperties}
     >
-      <div
-        className="mx-auto px-4 py-14 sm:px-6 sm:py-20"
-        style={{ maxWidth: 'var(--product-container, 72rem)' }}
-      >
-        <div
-          className={cn(
-            'product-layout',
-            !withSidebar && 'product-layout--no-sidebar',
-            withSidebar && layout.sidebarPosition === 'left' && 'product-layout--left',
-            withSidebar && layout.mobileSidebar === 'above' && 'product-layout--aside-above',
-            withSidebar && layout.mobileSidebar === 'hidden' && 'product-layout--aside-hidden',
-          )}
-        >
-          {/* A flex column rather than `space-y`, so the gap between sections
-              is one CSS variable the design screen can set. */}
-          <div
-            className="product-layout__main flex flex-col"
-            style={{ gap: 'var(--product-section-gap, 3rem)' }}
-          >
-            <SectionList sections={detail} product={ctx} country={country} container={false} />
-          </div>
-
-          {/* The sidebar follows the content in the markup as well as in the
-              grid, so a phone reads the product first whichever column the
-              sidebar takes on a wide screen. */}
-          {withSidebar ? (
-            <ProductAside sections={sidebar} ctx={ctx} sticky={layout.sidebarSticky} />
-          ) : null}
-        </div>
-      </div>
+      {segments.map((segment, index) =>
+        segment.stretch ? (
+          /*
+           * A stretched run renders the way a page's sections do: full-bleed,
+           * with its content in the standard container, so it lines up with
+           * the header at every width and zoom.
+           */
+          <SectionList
+            key={segment.key}
+            sections={segment.sections}
+            product={ctx}
+            country={country}
+            allowFirst={index === 0}
+          />
+        ) : (
+          <BoxedColumn
+            key={segment.key}
+            sections={segment.sections}
+            sidebar={segment.withSidebar ? sidebar : null}
+            ctx={ctx}
+            layout={layout}
+            allowFirst={index === 0}
+          />
+        ),
+      )}
 
       <JsonLd
         data={[
@@ -152,6 +149,129 @@ export async function ProductSurface({
           ]),
         ]}
       />
+    </div>
+  );
+}
+
+type Segment = {
+  key: string;
+  stretch: boolean;
+  sections: RenderableSection[];
+  withSidebar: boolean;
+};
+
+/**
+ * Splits the product's sections into runs that sit in the boxed column and
+ * runs that are stretched to the screen edges.
+ *
+ * Without a sidebar every stretched section breaks out where it stands. With
+ * one, only the stretched sections at the very top and bottom can: a section
+ * beside the sidebar shares its row with the sidebar, so it stays in its
+ * column. There is always a boxed run when there is a sidebar, even an empty
+ * one, because that run is where the sidebar lives.
+ */
+function segmentDetail(detail: RenderableSection[], withSidebar: boolean): Segment[] {
+  const visible = detail
+    .filter((section) => section.isVisible)
+    .sort((a, b) => a.sortOrder - b.sortOrder);
+  const stretched = visible.map((section) => parseSectionDesign(section.settings).stretch);
+
+  if (withSidebar) {
+    let head = 0;
+    while (head < visible.length && stretched[head]) head += 1;
+    let tail = visible.length;
+    while (tail > head && stretched[tail - 1]) tail -= 1;
+
+    const segments: Segment[] = [];
+    if (head > 0) {
+      segments.push({ key: 'top', stretch: true, sections: visible.slice(0, head), withSidebar: false });
+    }
+    segments.push({
+      key: 'main',
+      stretch: false,
+      sections: visible.slice(head, tail),
+      withSidebar: true,
+    });
+    if (tail < visible.length) {
+      segments.push({ key: 'bottom', stretch: true, sections: visible.slice(tail), withSidebar: false });
+    }
+    return segments;
+  }
+
+  const segments: Segment[] = [];
+  visible.forEach((section, index) => {
+    const last = segments[segments.length - 1];
+    if (last && last.stretch === stretched[index]) {
+      last.sections.push(section);
+    } else {
+      segments.push({
+        key: section.id,
+        stretch: stretched[index]!,
+        sections: [section],
+        withSidebar: false,
+      });
+    }
+  });
+  // A product with nothing visible still renders the (empty) boxed column.
+  return segments.length > 0
+    ? segments
+    : [{ key: 'main', stretch: false, sections: [], withSidebar: false }];
+}
+
+/**
+ * The boxed column: the product's container, its two-column grid and, when
+ * this run carries it, the sidebar.
+ */
+function BoxedColumn({
+  sections,
+  sidebar,
+  ctx,
+  layout,
+  allowFirst,
+}: {
+  sections: RenderableSection[];
+  sidebar: RenderableSection[] | null;
+  ctx: ProductRenderContext;
+  layout: ProductLayoutSettings;
+  allowFirst: boolean;
+}) {
+  return (
+    <div
+      className="mx-auto px-4 py-14 sm:px-6 sm:py-20"
+      // Blank inherits the website's own container, as the design screen says.
+      style={{ maxWidth: 'var(--product-container, var(--layout-container, 72rem))' }}
+    >
+      <div
+        className={cn(
+          'product-layout',
+          !sidebar && 'product-layout--no-sidebar',
+          sidebar && layout.sidebarPosition === 'left' && 'product-layout--left',
+          sidebar && layout.mobileSidebar === 'above' && 'product-layout--aside-above',
+          sidebar && layout.mobileSidebar === 'hidden' && 'product-layout--aside-hidden',
+        )}
+      >
+        {/* A flex column rather than `space-y`, so the gap between sections
+            is one CSS variable the design screen can set. */}
+        <div
+          className="product-layout__main flex flex-col"
+          style={{ gap: 'var(--product-section-gap, 3rem)' }}
+        >
+          <SectionList
+            sections={sections}
+            product={ctx}
+            country={ctx.country}
+            container={false}
+            allowFirst={allowFirst}
+          />
+        </div>
+
+        {/* The sidebar follows the content in the markup as well as in the
+            grid, so a phone reads the product first whichever column the
+            sidebar takes on a wide screen. */}
+        {sidebar ? (
+          <ProductAside sections={sidebar} ctx={ctx} sticky={layout.sidebarSticky} />
+        ) : null}
+      </div>
     </div>
   );
 }

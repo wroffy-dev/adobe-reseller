@@ -280,6 +280,14 @@ export const sectionDesignSchema = z.object({
   tablet: breakpointSchema.default(breakpointSchema.parse({})),
   mobile: breakpointSchema.default(breakpointSchema.parse({})),
   anchorId: z.preprocess(normaliseAnchor, z.string()).default(''),
+  /**
+   * Take the section out of the product page's boxed column, so its
+   * background runs to the edges of the screen and its content sits in the
+   * same container as a page's sections — lined up with the header.
+   *
+   * Only product pages read it: a page's sections already span the screen.
+   */
+  stretch: z.coerce.boolean().catch(false).default(false),
 });
 
 export type SectionDesign = z.infer<typeof sectionDesignSchema>;

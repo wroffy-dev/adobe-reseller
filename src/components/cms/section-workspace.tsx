@@ -274,6 +274,7 @@ export function SectionWorkspace({
               takenAnchors={anchorsForOthers(selected.id)}
               onSave={onSaveSection}
               onClose={() => setMobilePane('sections')}
+              surface={surface}
             />
           ) : (
             <div className="flex flex-1 items-center justify-center p-6 text-center">

@@ -64,12 +64,15 @@ export function DesignPanel({
   view = 'all',
   /** Anchor IDs used by the page's other sections, for duplicate detection. */
   takenAnchors = [],
+  /** Offer "Stretch to the screen edges" — only product pages read it. */
+  offerStretch = false,
 }: {
   value: unknown;
   onChange: (next: SectionDesign) => void;
   idPrefix: string;
   view?: DesignPanelView;
   takenAnchors?: string[];
+  offerStretch?: boolean;
 }) {
   // Always work against a fully-parsed design so a legacy or partial settings
   // object still renders every control with sensible values.
@@ -159,7 +162,18 @@ export function DesignPanel({
             />
           </DesignGroup>
 
-          <DesignGroup title="Width & height">
+          <DesignGroup title="Width & height" defaultOpen={offerStretch}>
+            {isDesktop && offerStretch ? (
+              <div className="rounded-lg border border-hairline p-3">
+                <Switch
+                  checked={design.stretch}
+                  onChange={(stretch) => patch({ stretch })}
+                  label="Stretch to the screen edges"
+                  hint="The background runs edge to edge and the content lines up with the header. Works above and below the sidebar; beside it, the section stays in its column."
+                />
+              </div>
+            ) : null}
+
             {isDesktop ? (
               <>
                 <Field label="Layout" htmlFor={`${idPrefix}-widthMode`}>
