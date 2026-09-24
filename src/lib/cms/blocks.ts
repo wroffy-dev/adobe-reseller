@@ -91,6 +91,16 @@ const heroSchema = z.object({
   imagePosition: objectPosition,
   imagePlacement: z.enum(['right', 'left']).catch('right').default('right'),
 
+  /**
+   * How the text and the form (or image) share the width on desktop; the
+   * number is the text's share. Equal keeps the original two-column grid.
+   */
+  columnSplit: z
+    .enum(['50', '55', '60', '65', '70', '45', '40', 'custom'])
+    .catch('50')
+    .default('50'),
+  columnSplitCustom: z.coerce.number().int().min(20).max(80).catch(50).default(50),
+
   // Form slot — the form itself is chosen from Form management, never hardcoded.
   showForm: z.boolean().default(false),
   formSlug: z.string().max(120).default(''),
@@ -664,6 +674,32 @@ const PAGE_BLOCKS: Record<string, BlockDefinition> = {
         fields: [{ kind: 'text', name: 'value', label: 'Text' }],
       },
       { kind: 'media', name: 'imageId', label: 'Image' },
+      {
+        kind: 'select',
+        name: 'columnSplit',
+        label: 'Column split',
+        width: 'half',
+        help: 'Text and form (or image) side by side on desktop. Phones stack them.',
+        options: [
+          { label: 'Equal (50 / 50)', value: '50' },
+          { label: '55 / 45', value: '55' },
+          { label: '60 / 40', value: '60' },
+          { label: '65 / 35', value: '65' },
+          { label: '70 / 30', value: '70' },
+          { label: '45 / 55', value: '45' },
+          { label: '40 / 60', value: '40' },
+          { label: 'Custom', value: 'custom' },
+        ],
+      },
+      {
+        kind: 'number',
+        name: 'columnSplitCustom',
+        label: 'Text column (%)',
+        width: 'half',
+        min: 20,
+        max: 80,
+        showWhen: { field: 'columnSplit', equals: ['custom'] },
+      },
       ...linkFields('primaryCta', 'Primary button'),
       ...linkFields('secondaryCta', 'Secondary button'),
       {

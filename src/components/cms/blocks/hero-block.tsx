@@ -6,6 +6,7 @@ import { resolveCmsIcon } from '@/components/ui/icons';
 import { cn } from '@/lib/utils/cn';
 import { SectionHeading, CtaLink, CmsImage, type BlockContext, mainCtaVariant, ctaVisible } from './shared';
 import { FormPanel } from './form-panel';
+import { heroColumns, heroTextShare } from '@/lib/cms/hero';
 
 /**
  * Hero.
@@ -31,6 +32,9 @@ export async function HeroBlock({ content, ctx }: { content: HeroContent; ctx: B
   const bullets = content.bullets.filter(Boolean);
   const badges = content.badges.filter((badge) => badge.label);
 
+  // The text's share of a two-column hero; 50 is the original equal grid.
+  const textShare = heroTextShare(content);
+
   // Only a content-only hero centres by default; a two-column hero reads better left-aligned.
   const centred = isBackdrop || (content.alignment === 'center' && !showImage && !showForm);
 
@@ -43,7 +47,8 @@ export async function HeroBlock({ content, ctx }: { content: HeroContent; ctx: B
         description={content.description}
         align={centred ? 'center' : 'left'}
         inverted={inverted}
-        className={centred ? undefined : 'max-w-xl'}
+        // A chosen split gives the text its whole column.
+        className={centred || textShare !== 50 ? undefined : 'max-w-xl'}
       />
 
       {bullets.length > 0 ? (
@@ -190,8 +195,20 @@ export async function HeroBlock({ content, ctx }: { content: HeroContent; ctx: B
       aside
     );
 
+  const asideFirst = content.imagePlacement === 'left';
+
   return (
-    <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-14">
+    <div
+      className={cn(
+        'grid items-center gap-10 lg:gap-14',
+        textShare === 50 ? 'lg:grid-cols-2' : 'lg:grid-cols-[var(--hero-cols)]',
+      )}
+      style={
+        textShare === 50
+          ? undefined
+          : ({ '--hero-cols': heroColumns(textShare, asideFirst) } as React.CSSProperties)
+      }
+    >
       <div className={cn(content.imagePlacement === 'left' && 'lg:order-2')}>{copy}</div>
       <div className={cn(content.imagePlacement === 'left' && 'lg:order-1')}>{asideContent}</div>
     </div>

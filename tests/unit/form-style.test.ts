@@ -28,8 +28,11 @@ const style = (values: Record<string, unknown>) => formStyleSchema.parse(values)
 describe('formStyleSchema', () => {
   it('is blank by default', () => {
     for (const [key, value] of Object.entries(DEFAULT_FORM_STYLE)) {
+      // A card's position does nothing until it is given a width.
+      if (key === 'cardPosition') continue;
       expect(['', 'inherit'], key).toContain(value);
     }
+    expect(DEFAULT_FORM_STYLE.cardPosition).toBe('center');
   });
 
   it('normalises colours and drops what is not one', () => {

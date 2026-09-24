@@ -69,6 +69,10 @@ export const formStyleSchema = z.object({
   cardRadius: length,
   cardPadding: length,
   cardShadow: z.enum(FORM_CARD_SHADOWS).catch('inherit').default('inherit'),
+  /** Blank fills the column; a length makes the card narrower than it. */
+  cardWidth: length,
+  /** Where a narrower card sits in its column. */
+  cardPosition: z.enum(['center', 'left', 'right']).catch('center').default('center'),
 });
 
 export type FormStyle = z.infer<typeof formStyleSchema>;
@@ -130,6 +134,14 @@ export function formCardStyle(style: FormStyle | null | undefined): React.CSSPro
   if (style.cardRadius) out.borderRadius = style.cardRadius;
   if (style.cardPadding) out.padding = style.cardPadding;
   if (style.cardShadow !== 'inherit') out.boxShadow = CARD_SHADOWS[style.cardShadow];
+  // Auto margins place a narrower card in a hero's grid cell and in an
+  // ordinary block alike. Only when a width is set: a full-width card has
+  // nowhere to move.
+  if (style.cardWidth) {
+    out.maxWidth = style.cardWidth;
+    out.marginLeft = style.cardPosition === 'left' ? 0 : 'auto';
+    out.marginRight = style.cardPosition === 'right' ? 0 : 'auto';
+  }
   return out;
 }
 
@@ -267,6 +279,25 @@ export function formStyleGroups(
             { label: 'Small', value: 'sm' },
             { label: 'Medium', value: 'md' },
             { label: 'Large', value: 'lg' },
+          ],
+        },
+        {
+          kind: 'length',
+          name: 'formStyle.cardWidth',
+          label: 'Card width',
+          width: 'half',
+          help: 'Blank fills the column; 380px makes a narrow form.',
+        },
+        {
+          kind: 'select',
+          name: 'formStyle.cardPosition',
+          label: 'Card position',
+          width: 'half',
+          help: 'Where a narrower card sits in its column.',
+          options: [
+            { label: 'Centre', value: 'center' },
+            { label: 'Left', value: 'left' },
+            { label: 'Right', value: 'right' },
           ],
         },
       ],
