@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { formBoolean } from './boolean';
 import { slugify } from '@/lib/utils/slug';
 import { blogPostOptionsSchema } from '@/lib/cms/blog-settings';
 
@@ -28,7 +29,7 @@ export const blogPostSchema = z
     subtitle: optional(240),
     excerpt: optional(600),
     content: z.string().max(200_000).default(''),
-    isFeatured: z.coerce.boolean().default(false),
+    isFeatured: formBoolean(false),
     /** Lower sorts first among featured posts. */
     featuredPriority: z.coerce.number().int().min(0).max(9999).default(0),
     featuredImageId: optional(40),
@@ -46,8 +47,8 @@ export const blogPostSchema = z
     seoDescription: optional(400),
     focusKeyword: optional(120),
     canonicalUrl: optional(500),
-    noIndex: z.coerce.boolean().default(false),
-    noFollow: z.coerce.boolean().default(false),
+    noIndex: formBoolean(false),
+    noFollow: formBoolean(false),
     ogTitle: optional(240),
     ogDescription: optional(400),
     ogImageId: optional(40),
@@ -60,7 +61,7 @@ export const blogPostSchema = z
 
 export const blogCategorySchema = z.object({
   name: z.string().trim().min(1, 'Name is required').max(120),
-  isActive: z.coerce.boolean().default(true),
+  isActive: formBoolean(true),
   /** Optional parent, e.g. Microsoft → Azure. Empty means top level. */
   parentId: z
     .string()
@@ -84,8 +85,8 @@ export const blogCategorySchema = z.object({
   ogTitle: optional(240),
   ogDescription: optional(400),
   ogImageId: optional(40),
-  noIndex: z.coerce.boolean().default(false),
-  noFollow: z.coerce.boolean().default(false),
+  noIndex: formBoolean(false),
+  noFollow: formBoolean(false),
 });
 
 /** A blog tag. Slug uniqueness is enforced in the action. */
@@ -96,11 +97,11 @@ export const blogTagSchema = z.object({
     .max(120)
     .transform((v) => slugify(v)),
   description: optional(1000),
-  isActive: z.coerce.boolean().default(true),
+  isActive: formBoolean(true),
   seoTitle: optional(240),
   seoDescription: optional(400),
   canonicalUrl: optional(500),
-  noIndex: z.coerce.boolean().default(false),
+  noIndex: formBoolean(false),
 });
 
 export type BlogTagInput = z.infer<typeof blogTagSchema>;

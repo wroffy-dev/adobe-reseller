@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { formBoolean } from './boolean';
 import { isReservedCountryPrefix } from '@/lib/country/routing';
 
 /**
@@ -52,7 +53,7 @@ export const countrySchema = z.object({
   currencySymbol: z.string().trim().min(1).max(8),
   phoneCode: optional(8),
   timezone: z.string().trim().min(1).max(64),
-  isDefault: z.coerce.boolean().default(false),
+  isDefault: formBoolean(false),
   /**
    * Ready for search engines.
    *
@@ -60,8 +61,8 @@ export const countrySchema = z.object({
    * anyone with the link, absent from every sitemap — before it is announced.
    * Defaults true so no existing market changes.
    */
-  isPublished: z.coerce.boolean().default(true),
-  isActive: z.coerce.boolean().default(true),
+  isPublished: formBoolean(true),
+  isActive: formBoolean(true),
   sortOrder: z.coerce.number().int().min(0).max(9999).default(0),
 });
 
@@ -74,8 +75,8 @@ export const countrySettingsSchema = z.object({
   // two places to keep in agreement.
   robotsDisallow: optional(2000),
   robotsAllow: optional(2000),
-  noIndexCountry: z.coerce.boolean().default(false),
-  excludeFromSitemap: z.coerce.boolean().default(false),
+  noIndexCountry: formBoolean(false),
+  excludeFromSitemap: formBoolean(false),
   companyName: optional(160),
   legalName: optional(160),
   salesPhone: optional(40),
@@ -132,7 +133,7 @@ export const productCountrySchema = z.object({
     .nullable()
     .transform((value) => (value ? new Date(value) : null))
     .refine((date) => date === null || !Number.isNaN(date.getTime()), 'Enter a valid date'),
-  isFeatured: z.coerce.boolean().default(false),
+  isFeatured: formBoolean(false),
   sortOrder: z.coerce.number().int().min(0).max(9999).default(0),
   featuredOrder: z.coerce.number().int().min(0).max(9999).default(0),
   currency: z
@@ -161,7 +162,7 @@ export const productCountrySchema = z.object({
   seoTitle: optional(200),
   seoDescription: optional(400),
   canonicalUrl: optional(500),
-  noIndex: z.coerce.boolean().default(false),
+  noIndex: formBoolean(false),
   ogImageId: optional(40),
 });
 
