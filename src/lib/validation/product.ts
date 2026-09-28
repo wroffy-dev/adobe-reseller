@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { formBoolean } from './boolean';
 import { slugify } from '@/lib/utils/slug';
 
 const optional = (max: number) =>
@@ -45,7 +46,7 @@ export const productInputSchema = z
       .nullable()
       .transform((v) => (v ? new Date(v) : null))
       .refine((d) => d === null || !Number.isNaN(d.getTime()), 'Enter a valid date'),
-    isFeatured: z.coerce.boolean().default(false),
+    isFeatured: formBoolean(false),
     sortOrder: z.coerce.number().int().min(0).max(9999).default(0),
     /** Position within the featured rail, independent of the catalogue order. */
     featuredOrder: z.coerce.number().int().min(0).max(9999).default(0),
@@ -85,7 +86,7 @@ export const productInputSchema = z
     seoTitle: optional(200),
     seoDescription: optional(400),
     canonicalUrl: optional(500),
-    noIndex: z.coerce.boolean().default(false),
+    noIndex: formBoolean(false),
     ogImageId: optional(40),
   })
   .refine(

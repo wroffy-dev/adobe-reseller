@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { formBoolean } from './boolean';
 import { pageSlug, slugify } from '@/lib/utils/slug';
 
 export const contentStatusSchema = z.enum(['DRAFT', 'PUBLISHED', 'SCHEDULED', 'ARCHIVED']);
@@ -33,15 +34,15 @@ export const pageInputSchema = z
       .nullable()
       .transform((v) => (v ? new Date(v) : null))
       .refine((d) => d === null || !Number.isNaN(d.getTime()), 'Enter a valid date'),
-    isHomepage: z.coerce.boolean().default(false),
-    showHeader: z.coerce.boolean().default(true),
-    showFooter: z.coerce.boolean().default(true),
+    isHomepage: formBoolean(false),
+    showHeader: formBoolean(true),
+    showFooter: formBoolean(true),
 
     seoTitle: optionalString(200),
     seoDescription: optionalString(400),
     canonicalUrl: optionalString(500),
-    noIndex: z.coerce.boolean().default(false),
-    noFollow: z.coerce.boolean().default(false),
+    noIndex: formBoolean(false),
+    noFollow: formBoolean(false),
     ogTitle: optionalString(200),
     ogDescription: optionalString(400),
     ogImageId: optionalString(40),
