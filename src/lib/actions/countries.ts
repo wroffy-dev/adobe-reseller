@@ -23,6 +23,7 @@ import {
 import { listAccessibleCountries, assertCountryAccess } from '@/lib/country/access';
 import { ADMIN_COUNTRY_COOKIE } from '@/lib/country/admin';
 import { revalidateCountryPage } from '@/lib/country/revalidate';
+import { syncContentRoutes, actorOf } from '@/lib/urls/registry';
 import {
   describeContents,
   deletionWarning,
@@ -191,6 +192,10 @@ export async function saveCountry(
     });
 
     revalidateMarkets();
+    // A changed market prefix moves every address in the market; the
+    // registry re-addresses them and keeps the old URLs as redirects.
+    invalidateCountryCache();
+    await syncContentRoutes({ all: true }, actorOf(user), 'renamed');
     return success({ id: country.id }, 'Country saved.');
   } catch (error) {
     return toActionError(error);
@@ -451,6 +456,7 @@ export async function saveProductCountry(formData: FormData): Promise<ActionResu
 
     revalidatePath(`/admin/products/${productId}`);
     revalidateCountryPage(country, `products/${product.slug}`);
+    await syncContentRoutes({ kind: 'product', ids: [productId] }, actorOf(user), 'renamed');
     return success(undefined, `${country.name} pricing saved.`);
   } catch (error) {
     return toActionError(error);
@@ -492,6 +498,7 @@ export async function removeProductCountry(input: unknown): Promise<ActionResult
 
     revalidatePath(`/admin/products/${productId}`);
     revalidateCountryPage(country, `products/${product.slug}`);
+    await syncContentRoutes({ kind: 'product', ids: [productId] }, actorOf(user), 'deleted');
     return success(undefined, `${product.name} is no longer sold in ${country.name}.`);
   } catch (error) {
     return toActionError(error);

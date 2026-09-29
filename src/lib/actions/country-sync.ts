@@ -10,6 +10,7 @@ import { runCountrySync, type SyncResult } from '@/lib/country/sync';
 import { claimSyncRun } from '@/lib/country/sync-lock';
 import { success, failure, toActionError, type ActionResult } from '@/lib/utils/result';
 import type { Prisma } from '@prisma/client';
+import { syncContentRoutes, actorOf } from '@/lib/urls/registry';
 
 /**
  * There is no `mode`, and no `sourceCountryId`.
@@ -127,6 +128,9 @@ export async function syncCountryContent(input: unknown): Promise<ActionResult<S
       revalidatePath('/admin/settings/countries');
       revalidatePath('/admin/products');
       revalidatePath('/admin/pages');
+      // Copied content gets its addresses through the same registry checks as
+      // content made by hand: a copy never takes an address someone else holds.
+      await syncContentRoutes({ all: true }, actorOf(user), 'created');
       return success(
         { ...result, runId: run.id },
         `${result.created} added, ${result.skipped} already here` +

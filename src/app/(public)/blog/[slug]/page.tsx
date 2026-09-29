@@ -1,20 +1,31 @@
 import type { Metadata } from 'next';
-import { getDefaultCountry } from '@/lib/country/registry';
-import { blogPostMetadata, BlogPostSurface } from '../../_surfaces/blog';
+import { publicMetadata, PublicPage, type PublicSearchParams } from '../../_surfaces/dispatch';
 
+// The root layout reads the visitor's tracking-consent cookie, so nothing under
+// it can be rendered statically.
 export const dynamic = 'force-dynamic';
 
-/** The root market's article route. Prefixed markets share the same surface. */
+type Params = Promise<{ slug: string }>;
+type SearchParams = Promise<PublicSearchParams>;
+
+/**
+ * A literal route Next matches before the catch-all. It renders nothing of its
+ * own: the full path goes to the shared dispatcher, so an address here that
+ * has moved is redirected by this route, and one that now belongs to other
+ * content resolves to it.
+ */
 export async function generateMetadata({
   params,
+  searchParams,
 }: {
-  params: Promise<{ slug: string }>;
+  params: Params;
+  searchParams: SearchParams;
 }): Promise<Metadata> {
-  const [{ slug }, country] = await Promise.all([params, getDefaultCountry()]);
-  return blogPostMetadata(country, slug);
+  const [{ slug }, query] = await Promise.all([params, searchParams]);
+  return publicMetadata(['blog', slug], query);
 }
 
-export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
-  const [{ slug }, country] = await Promise.all([params, getDefaultCountry()]);
-  return <BlogPostSurface country={country} slug={slug} />;
+export default async function BlogPostPage({ params, searchParams }: { params: Params; searchParams: SearchParams }) {
+  const [{ slug }, query] = await Promise.all([params, searchParams]);
+  return <PublicPage segments={['blog', slug]} query={query} />;
 }

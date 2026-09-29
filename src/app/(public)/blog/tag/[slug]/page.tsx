@@ -1,13 +1,19 @@
 import type { Metadata } from 'next';
-import { getDefaultCountry } from '@/lib/country/registry';
-import { blogTagMetadata, BlogTagSurface, type BlogSearchParams } from '../../../_surfaces/blog';
+import { publicMetadata, PublicPage, type PublicSearchParams } from '../../../_surfaces/dispatch';
 
+// The root layout reads the visitor's tracking-consent cookie, so nothing under
+// it can be rendered statically.
 export const dynamic = 'force-dynamic';
 
 type Params = Promise<{ slug: string }>;
-type SearchParams = Promise<BlogSearchParams>;
+type SearchParams = Promise<PublicSearchParams>;
 
-/** The root market's tag archive. Prefixed markets share the same surface. */
+/**
+ * A literal route Next matches before the catch-all. It renders nothing of its
+ * own: the full path goes to the shared dispatcher, so an address here that
+ * has moved is redirected by this route, and one that now belongs to other
+ * content resolves to it.
+ */
 export async function generateMetadata({
   params,
   searchParams,
@@ -15,25 +21,11 @@ export async function generateMetadata({
   params: Params;
   searchParams: SearchParams;
 }): Promise<Metadata> {
-  const [{ slug }, query, country] = await Promise.all([
-    params,
-    searchParams,
-    getDefaultCountry(),
-  ]);
-  return blogTagMetadata(country, slug, query);
+  const [{ slug }, query] = await Promise.all([params, searchParams]);
+  return publicMetadata(['blog', 'tag', slug], query);
 }
 
-export default async function TagArchive({
-  params,
-  searchParams,
-}: {
-  params: Params;
-  searchParams: SearchParams;
-}) {
-  const [{ slug }, query, country] = await Promise.all([
-    params,
-    searchParams,
-    getDefaultCountry(),
-  ]);
-  return <BlogTagSurface country={country} slug={slug} searchParams={query} />;
+export default async function TagArchive({ params, searchParams }: { params: Params; searchParams: SearchParams }) {
+  const [{ slug }, query] = await Promise.all([params, searchParams]);
+  return <PublicPage segments={['blog', 'tag', slug]} query={query} />;
 }

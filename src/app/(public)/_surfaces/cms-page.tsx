@@ -9,6 +9,9 @@ import { buildMetadata } from '@/lib/seo/metadata';
 import { countryBreadcrumbSchema, faqSchema } from '@/lib/seo/structured-data';
 import { parseBlockContent, type FaqContent } from '@/lib/cms/blocks';
 import type { CountryContext } from '@/lib/country/types';
+import { listActiveCountries } from '@/lib/country/registry';
+import { loadLinks } from '@/lib/urls/links';
+import { notFound } from 'next/navigation';
 
 /**
  * A CMS page, in one market.
@@ -21,11 +24,13 @@ import type { CountryContext } from '@/lib/country/types';
 export async function cmsPageMetadata(
   country: CountryContext,
   slug: string,
+  /** The registered public path, when the URL registry resolved this request. */
+  fullPath?: string,
 ): Promise<Metadata> {
   const page = await getPublishedPage(country.id, slug);
   if (!page) return { title: 'Page not found', robots: { index: false, follow: false } };
 
-  const [ogImage, twitterImage, alternates] = await Promise.all([
+  const [ogImage, twitterImage, alternates, links, markets] = await Promise.all([
     page.ogImageId
       ? prisma.media.findUnique({ where: { id: page.ogImageId }, select: { url: true } })
       : null,
@@ -33,14 +38,28 @@ export async function cmsPageMetadata(
       ? prisma.media.findUnique({ where: { id: page.twitterImageId }, select: { url: true } })
       : null,
     findPublishedPageCountries(slug),
+    loadLinks(),
+    listActiveCountries(),
   ]);
+
+  // Pages pair across markets by slug; each market's address comes from the
+  // registry, so a market that gave its page its own URL still pairs up.
+  const alternatePaths = links.enabled
+    ? Object.fromEntries(
+        markets
+          .filter((market) => alternates.includes(market.id))
+          .map((market) => [market.id, links.page(market, slug)]),
+      )
+    : undefined;
 
   return buildMetadata({
     title: page.seoTitle || page.title,
     description: page.seoDescription,
     path: `/${slug}`,
+    fullPath: fullPath ?? (links.enabled ? links.page(country, slug) : undefined),
     country,
     alternateCountryIds: alternates,
+    alternatePaths,
     canonicalUrl: page.canonicalUrl,
     noIndex: page.noIndex,
     noFollow: page.noFollow,
@@ -56,11 +75,15 @@ export async function cmsPageMetadata(
 export async function CmsPageSurface({
   country,
   slug,
+  path,
 }: {
   country: CountryContext;
   slug: string;
+  /** The registered public path, when the URL registry resolved this request. */
+  path?: string;
 }) {
   const page = await getPublishedPage(country.id, slug);
+  if (!page && path) notFound();
 
   /*
    * A missing page in one market never falls back to another market's content
@@ -82,7 +105,7 @@ export async function CmsPageSurface({
       ? null
       : countryBreadcrumbSchema(country, [
           { name: site.siteName, path: '' },
-          { name: page.title, path: slug },
+          { name: page.title, path: path ?? slug },
         ]);
 
   return (

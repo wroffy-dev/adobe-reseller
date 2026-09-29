@@ -6,7 +6,6 @@ import { AdminPageHeader } from '@/components/admin/page-header';
 import { CategoryManager, type CategoryRow } from '@/components/admin/products/category-manager';
 import { Card } from '@/components/ui/card';
 import { taxonomyPageMap } from '@/lib/services/taxonomy-pages';
-import { taxonomyPageSlug } from '@/lib/cms/taxonomy-pages';
 
 export const metadata: Metadata = { title: 'Product categories' };
 export const dynamic = 'force-dynamic';
@@ -35,7 +34,7 @@ export default async function ProductCategories() {
   // link to it rather than offer to make a second one.
   const pages = await taxonomyPageMap(
     'category',
-    rows.map((row) => row.slug),
+    rows.map((row) => ({ id: row.id, slug: row.slug })),
     scope.country.id,
   );
 
@@ -47,7 +46,7 @@ export default async function ProductCategories() {
     sortOrder: row.sortOrder,
     imageId: row.imageId,
     productCount: row._count.products,
-    pageId: pages.get(taxonomyPageSlug('category', row.slug)) ?? null,
+    pageId: pages.get(row.id) ?? null,
   }));
 
   return (

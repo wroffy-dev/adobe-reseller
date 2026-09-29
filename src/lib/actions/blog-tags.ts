@@ -10,6 +10,7 @@ import { uniqueSlug, slugify } from '@/lib/utils/slug';
 import { sanitizeText } from '@/lib/utils/sanitize';
 import { success, failure, toActionError, type ActionResult } from '@/lib/utils/result';
 import { revalidateAllCountryBlogs } from '@/lib/country/revalidate';
+import { syncContentRoutes, checkSlugAvailability, isAddressTaken, actorOf } from '@/lib/urls/registry';
 
 /**
  * Manual tag management.
@@ -48,7 +49,7 @@ export async function saveBlogTag(
           where: { slug: candidate },
           select: { id: true },
         });
-        return Boolean(existing);
+        return Boolean(existing) || (await isAddressTaken({ kind: 'blogTag', slug: candidate }));
       });
     } else {
       // On edit the admin chose the slug, so a clash is reported rather than
@@ -58,6 +59,8 @@ export async function saveBlogTag(
         select: { id: true },
       });
       if (clash) return failure('Another tag already uses that URL slug.');
+      const available = await checkSlugAvailability({ kind: 'blogTag', contentId: tagId, slug });
+      if (!available.ok) return failure(available.message);
     }
 
     const data = {
@@ -85,6 +88,7 @@ export async function saveBlogTag(
 
     revalidatePath('/admin/blog/tags');
     await revalidateAllCountryBlogs();
+    await syncContentRoutes({ kind: 'blogTag' }, actorOf(user), 'renamed');
     return success({ id: tag.id }, 'Tag saved.');
   } catch (error) {
     return toActionError(error);
@@ -120,6 +124,7 @@ export async function deleteBlogTag(tagId: string): Promise<ActionResult> {
 
     revalidatePath('/admin/blog/tags');
     await revalidateAllCountryBlogs();
+    await syncContentRoutes({ kind: 'blogTag' }, actorOf(user), 'deleted');
     return success(
       undefined,
       tag._count.posts > 0
@@ -175,6 +180,7 @@ export async function bulkBlogTagAction(input: unknown): Promise<ActionResult> {
 
     revalidatePath('/admin/blog/tags');
     await revalidateAllCountryBlogs();
+    await syncContentRoutes({ kind: 'blogTag' }, actorOf(user), 'bulk');
     return success(undefined, `${targetIds.length} tag(s) deleted.`);
   } catch (error) {
     return toActionError(error);

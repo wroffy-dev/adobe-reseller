@@ -12,6 +12,7 @@ import { getCountryById } from '@/lib/country/registry';
 import { revalidateCountryPage } from '@/lib/country/revalidate';
 import type { PermissionKey } from '@/lib/auth/permissions';
 import type { TrashKind } from '@/lib/services/trash';
+import { syncContentRoutes, isAddressTaken, actorOf } from '@/lib/urls/registry';
 
 /**
  * Putting back, and throwing away for good.
@@ -98,19 +99,28 @@ async function freeSlug(kind: Kind, id: string, parked: string, countryId: strin
 
   const taken = async (candidate: string): Promise<boolean> => {
     switch (kind) {
+      // Pages and articles also check the URL registry: the address may have
+      // been taken by other content, or kept as a redirect, since the delete.
+      // The restore then comes back under a new slug and says so — it is a
+      // draft, so no published address is being changed.
       case 'page':
-        return Boolean(
-          await prisma.page.findFirst({
-            where: { slug: candidate, countryId: countryId ?? undefined, id: { not: id } },
-            select: { id: true },
-          }),
+        return (
+          Boolean(
+            await prisma.page.findFirst({
+              where: { slug: candidate, countryId: countryId ?? undefined, id: { not: id } },
+              select: { id: true },
+            }),
+          ) ||
+          (await isAddressTaken({ kind: 'page', slug: candidate, countryIds: countryId ? [countryId] : undefined }))
         );
       case 'post':
-        return Boolean(
-          await prisma.blogPost.findFirst({
-            where: { slug: candidate, countryId: countryId ?? undefined, id: { not: id } },
-            select: { id: true },
-          }),
+        return (
+          Boolean(
+            await prisma.blogPost.findFirst({
+              where: { slug: candidate, countryId: countryId ?? undefined, id: { not: id } },
+              select: { id: true },
+            }),
+          ) || (await isAddressTaken({ kind: 'post', slug: candidate }))
         );
       case 'productCategory':
         return Boolean(
@@ -194,6 +204,7 @@ export async function restoreFromTrash(kind: Kind, id: string): Promise<ActionRe
       const country = await getCountryById(row.countryId);
       if (country) revalidateCountryPage(country, slug);
     }
+    await syncContentRoutes({ all: true }, actorOf(user), 'restored');
 
     return success(
       undefined,

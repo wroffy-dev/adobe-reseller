@@ -17,6 +17,7 @@ import { assertCountryAccess } from '@/lib/country/access';
 import { getCountryById } from '@/lib/country/registry';
 import { revalidateCountryPage } from '@/lib/country/revalidate';
 import type { CountryContext } from '@/lib/country/types';
+import { syncContentRoutes, checkSlugAvailability, isAddressTaken, actorOf } from '@/lib/urls/registry';
 
 /** Revalidates the public surfaces a page change can affect, in its market. */
 async function revalidatePage(countryId: string, slug: string) {
@@ -79,7 +80,11 @@ export async function createPage(formData: FormData): Promise<ActionResult<{ id:
         where: { countryId_slug: { countryId: country.id, slug: candidate } },
         select: { id: true },
       });
-      return Boolean(existing);
+      // The address must be free across every content type in this market.
+      return (
+        Boolean(existing) ||
+        (await isAddressTaken({ kind: 'page', slug: candidate, countryIds: [country.id] }))
+      );
     });
 
     const page = await prisma.$transaction(async (tx) => {
@@ -115,6 +120,7 @@ export async function createPage(formData: FormData): Promise<ActionResult<{ id:
 
     revalidatePath('/admin/pages');
     await revalidatePage(page.countryId, slug);
+    await syncContentRoutes({ kind: 'page', ids: [page.id] }, actorOf(user), 'created');
     return success({ id: page.id }, 'Page created.');
   } catch (error) {
     return toActionError(error);
@@ -165,6 +171,8 @@ export async function updatePage(pageId: string, formData: FormData): Promise<Ac
       });
       if (clash)
         return failure('Another page already uses that URL.', { slug: ['This URL is taken'] });
+      const available = await checkSlugAvailability({ kind: 'page', contentId: pageId, slug });
+      if (!available.ok) return failure(available.message, { slug: [available.message] });
     }
 
     const updated = await prisma.$transaction(async (tx) => {
@@ -203,6 +211,7 @@ export async function updatePage(pageId: string, formData: FormData): Promise<Ac
     revalidatePath(`/admin/pages/${pageId}`);
     await revalidatePage(before.countryId, before.slug);
     if (slug !== before.slug) await revalidatePage(before.countryId, slug);
+    await syncContentRoutes({ kind: 'page', ids: [pageId] }, actorOf(user), 'renamed');
     return success(undefined, 'Page saved.');
   } catch (error) {
     return toActionError(error);
@@ -241,6 +250,7 @@ export async function setPageStatus(
 
     revalidatePath('/admin/pages');
     await revalidatePage(page.countryId, page.slug);
+    await syncContentRoutes({ kind: 'page', ids: [pageId] }, actorOf(user), 'renamed');
     return success(undefined, `Page ${status.toLowerCase()}.`);
   } catch (error) {
     return toActionError(error);
@@ -262,7 +272,10 @@ export async function duplicatePage(pageId: string): Promise<ActionResult<{ id: 
         where: { countryId_slug: { countryId: source.countryId, slug: candidate } },
         select: { id: true },
       });
-      return Boolean(existing);
+      return (
+        Boolean(existing) ||
+        (await isAddressTaken({ kind: 'page', slug: candidate, countryIds: [source.countryId] }))
+      );
     });
 
     const copy = await prisma.page.create({
@@ -296,6 +309,7 @@ export async function duplicatePage(pageId: string): Promise<ActionResult<{ id: 
     });
 
     revalidatePath('/admin/pages');
+    await syncContentRoutes({ kind: 'page', ids: [copy.id] }, actorOf(user), 'created');
     return success({ id: copy.id }, 'Page duplicated.');
   } catch (error) {
     return toActionError(error);
@@ -412,6 +426,7 @@ export async function duplicatePageToCountry(
 
     revalidatePath('/admin/pages');
     await revalidatePage(target.id, copy.slug);
+    await syncContentRoutes({ kind: 'page' }, actorOf(user), 'created');
     return success(
       { id: copy.id, replaced: Boolean(existing) },
       `Copied to ${target.name} as a draft.`,
@@ -451,6 +466,7 @@ export async function deletePage(pageId: string): Promise<ActionResult> {
 
     revalidatePath('/admin/pages');
     await revalidatePage(page.countryId, page.slug);
+    await syncContentRoutes({ kind: 'page', ids: [pageId] }, actorOf(user), 'deleted');
     return success(undefined, 'Page deleted.');
   } catch (error) {
     return toActionError(error);
@@ -744,6 +760,7 @@ export async function bulkPageAction(input: unknown): Promise<ActionResult> {
     for (const page of targets) await revalidatePage(page.countryId, page.slug);
 
     const skipped = pages.length - targets.length;
+    await syncContentRoutes({ kind: 'page' }, actorOf(user), 'bulk');
     return success(
       undefined,
       `${targets.length} page(s) updated.${skipped ? ` ${skipped} skipped (homepage).` : ''}`,

@@ -19,6 +19,7 @@ import { ensureTaxonomyPage } from '@/lib/services/taxonomy-pages';
 import type { TaxonomyKind } from '@/lib/cms/taxonomy-pages';
 import { countryPath } from '@/lib/country/routing';
 import type { SessionUser } from '@/lib/auth/guards';
+import { syncContentRoutes, checkSlugAvailability, isAddressTaken, actorOf } from '@/lib/urls/registry';
 
 /**
  * Revalidates a product's page in every market that could be serving it.
@@ -134,12 +135,14 @@ export async function createProduct(formData: FormData): Promise<ActionResult<{ 
     const user = await authorize('products.create');
     const input = readProductForm(formData);
 
+    // A new product's address must be free across every content type, not
+    // just among products — a page or a redirect may already hold it.
     const slug = await uniqueSlug(input.slug || slugify(input.name), async (candidate) => {
       const existing = await prisma.product.findUnique({
         where: { slug: candidate },
         select: { id: true },
       });
-      return Boolean(existing);
+      return Boolean(existing) || (await isAddressTaken({ kind: 'product', slug: candidate }));
     });
 
     const product = await prisma.product.create({
@@ -168,6 +171,7 @@ export async function createProduct(formData: FormData): Promise<ActionResult<{ 
 
     revalidatePath('/admin/products');
     await revalidateProduct(slug);
+    await syncContentRoutes({ kind: 'product', ids: [product.id] }, actorOf(user), 'created');
     return success({ id: product.id }, 'Product created.');
   } catch (error) {
     return toActionError(error);
@@ -251,6 +255,10 @@ export async function updateProduct(productId: string, formData: FormData): Prom
         select: { id: true },
       });
       if (clash) return failure('Another product already uses that URL.', { slug: ['This URL is taken'] });
+      // The same check the Slug & URL Manager runs, so it cannot be bypassed
+      // here: every market's resulting address must be free.
+      const available = await checkSlugAvailability({ kind: 'product', contentId: productId, slug });
+      if (!available.ok) return failure(available.message, { slug: [available.message] });
     }
 
     const updated = await prisma.product.update({
@@ -300,6 +308,7 @@ export async function updateProduct(productId: string, formData: FormData): Prom
     revalidatePath(`/admin/products/${productId}`);
     await revalidateProduct(before.slug);
     if (slug !== before.slug) await revalidateProduct(slug);
+    await syncContentRoutes({ kind: 'product', ids: [productId] }, actorOf(user), 'renamed');
     return success(undefined, 'Product saved.');
   } catch (error) {
     return toActionError(error);
@@ -336,6 +345,7 @@ export async function setProductStatus(
 
     revalidatePath('/admin/products');
     await revalidateProduct(product.slug);
+    await syncContentRoutes({ kind: 'product', ids: [productId] }, actorOf(user), 'renamed');
     return success(undefined, `Product ${status.toLowerCase()}.`);
   } catch (error) {
     return toActionError(error);
@@ -472,7 +482,7 @@ export async function duplicateProduct(productId: string): Promise<ActionResult<
         where: { slug: candidate },
         select: { id: true },
       });
-      return Boolean(existing);
+      return Boolean(existing) || (await isAddressTaken({ kind: 'product', slug: candidate }));
     });
 
     const { id, createdAt, updatedAt, sku, ...rest } = source;
@@ -561,6 +571,7 @@ export async function duplicateProduct(productId: string): Promise<ActionResult<
     });
 
     revalidatePath('/admin/products');
+    await syncContentRoutes({ kind: 'product', ids: [copy.id] }, actorOf(user), 'created');
     return success({ id: copy.id }, 'Product duplicated.');
   } catch (error) {
     return toActionError(error);
@@ -609,6 +620,7 @@ export async function deleteProduct(productId: string): Promise<ActionResult> {
 
     revalidatePath('/admin/products');
     await revalidateProduct(product.slug);
+    await syncContentRoutes({ kind: 'product', ids: [productId] }, actorOf(user), 'deleted');
     return success(undefined, `Removed from ${scope.country.name}.`);
   } catch (error) {
     return toActionError(error);
@@ -738,6 +750,7 @@ export async function restoreProduct(productId: string): Promise<ActionResult> {
     revalidatePath('/admin/products');
     revalidatePath('/admin/products/trash');
     await revalidateProduct(slug);
+    await syncContentRoutes({ kind: 'product', ids: [productId] }, actorOf(user), 'restored');
     return success(undefined, `Restored to ${scope.country.name} as a draft.`);
   } catch (error) {
     return toActionError(error);
@@ -787,6 +800,7 @@ export async function purgeProduct(productId: string): Promise<ActionResult> {
 
     revalidatePath('/admin/products');
     revalidatePath('/admin/products/trash');
+    await syncContentRoutes({ kind: 'product', ids: [productId] }, actorOf(user), 'deleted');
     return success(undefined, 'Deleted for good.');
   } catch (error) {
     return toActionError(error);
@@ -879,6 +893,7 @@ export async function saveProductCategory(
     revalidatePath('/admin/products/categories');
     revalidatePath('/admin/pages');
     revalidatePath('/', 'layout');
+    await syncContentRoutes({ kind: 'page' }, actorOf(user), 'renamed');
     return success(
       { id: category.id },
       generatedPage ? `Category saved, with a page at /${generatedPage}.` : 'Category saved.',
@@ -941,6 +956,7 @@ export async function generateTaxonomyPage(
     revalidatePath('/admin/products/brands');
     revalidatePath('/admin/pages');
     revalidatePath('/', 'layout');
+    await syncContentRoutes({ kind: 'page' }, actorOf(user), 'created');
     return success({ pageId: page.pageId, slug: page.slug }, `Page created at /${page.slug}.`);
   } catch (error) {
     return toActionError(error);
@@ -994,6 +1010,7 @@ export async function deleteProductCategory(categoryId: string): Promise<ActionR
 
     revalidatePath('/admin/products/categories');
     revalidatePath('/admin/products');
+    await syncContentRoutes({ kind: 'page' }, actorOf(user), 'renamed');
     return success(
       undefined,
       outcome.retired
@@ -1045,6 +1062,7 @@ export async function bulkProductAction(input: unknown): Promise<ActionResult> {
 
       revalidatePath('/admin/products');
       revalidatePath('/', 'layout');
+      await syncContentRoutes({ kind: 'product', ids }, actorOf(user), 'bulk');
       return success(
         undefined,
         `${removed} product(s) removed from ${scope.country.name}. Other markets are unchanged.`,
@@ -1116,6 +1134,7 @@ export async function bulkProductAction(input: unknown): Promise<ActionResult> {
 
     revalidatePath('/admin/products');
     revalidatePath('/', 'layout');
+    await syncContentRoutes({ kind: 'product', ids }, actorOf(user), 'bulk');
     return success(undefined, `${products.length} product(s) updated.`);
   } catch (error) {
     return toActionError(error);
@@ -1207,6 +1226,7 @@ export async function saveBrand(
     revalidatePath('/admin/products');
     revalidatePath('/admin/pages');
     revalidatePath('/', 'layout');
+    await syncContentRoutes({ kind: 'page' }, actorOf(user), 'renamed');
     return success(
       { id: brand.id },
       generatedPage ? `Brand saved, with a page at /${generatedPage}.` : 'Brand saved.',
@@ -1263,6 +1283,7 @@ export async function deleteBrand(brandId: string): Promise<ActionResult> {
     revalidatePath('/admin/products/brands');
     revalidatePath('/admin/products');
     revalidatePath('/', 'layout');
+    await syncContentRoutes({ kind: 'page' }, actorOf(user), 'renamed');
     return success(
       undefined,
       outcome.retired

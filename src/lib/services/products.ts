@@ -5,6 +5,7 @@ import { decimalToString } from '@/lib/utils/money';
 import { countryPath, countryHref, localiseHtml } from '@/lib/country/routing';
 import type { CountryContext } from '@/lib/country/types';
 import type { Prisma } from '@prisma/client';
+import { links, loadLinks } from '@/lib/urls/links';
 
 /**
  * Products, resolved for one market.
@@ -151,7 +152,9 @@ export function toPublicProduct(row: ProductCountryRow, country: CountryContext)
     id: product.id,
     name: product.name,
     slug: product.slug,
-    href: countryPath(country, `products/${product.slug}`),
+    // The URL registry's address in this market (built-in /products/<slug>
+    // until the registry is switched on).
+    href: links().product(country, product.slug),
     sku: product.sku,
     // Copy can carry links the editor typed by hand, and a market's page must
     // not send its visitor into another market's.
@@ -228,6 +231,7 @@ export type ProductSelection = {
  */
 export const selectProducts = cache(
   async (country: CountryContext, selection: ProductSelection): Promise<PublicProduct[]> => {
+    await loadLinks();
     const take = Math.min(Math.max(selection.limit ?? 3, 1), 24);
     const base = publishedProductWhere(country.id);
 
@@ -295,6 +299,7 @@ export const getProductSeo = cache(async (countryId: string, slug: string) => {
       ogImage: { select: { url: true } },
       product: {
         select: {
+          id: true,
           name: true,
           seoTitle: true,
           seoDescription: true,

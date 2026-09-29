@@ -4,6 +4,7 @@ import { prisma } from '@/lib/db/prisma';
 import { navHref, resolvedHref } from '@/lib/cms/nav-links';
 import type { CountryContext } from '@/lib/country/types';
 import type { NavigationLocation } from '@prisma/client';
+import { loadLinks } from '@/lib/urls/links';
 
 export type ResolvedNavItem = {
   id: string;
@@ -45,7 +46,7 @@ export type ResolvedNavigation = {
 
 const navInclude = {
   image: { select: { url: true, altText: true } },
-  page: { select: { slug: true, deletedAt: true } },
+  page: { select: { id: true, slug: true, deletedAt: true } },
   product: { select: { slug: true, deletedAt: true } },
   blogPost: { select: { slug: true, deletedAt: true } },
   blogCategory: { select: { slug: true } },
@@ -54,6 +55,7 @@ const navInclude = {
 /** Loads every menu in a location for one market, with items resolved to real hrefs. */
 export const getNavigations = cache(
   async (country: CountryContext, location: NavigationLocation): Promise<ResolvedNavigation[]> => {
+    await loadLinks();
     const menus = await prisma.navigation.findMany({
       where: { location, countryId: country.id },
       orderBy: { createdAt: 'asc' },

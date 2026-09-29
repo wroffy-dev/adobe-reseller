@@ -6,6 +6,7 @@ import { listIndexableCountries } from '@/lib/country/registry';
 import { countryPath } from '@/lib/country/routing';
 import { siteUrl } from '@/lib/env';
 import type { CountryContext } from '@/lib/country/types';
+import { loadLinks } from '@/lib/urls/links';
 
 /**
  * The sitemaps.
@@ -31,6 +32,8 @@ export type SitemapUrl = {
   priority?: number;
   /** Reciprocal alternates, only where a real equivalent is published. */
   alternates?: Array<{ hreflang: string; href: string }>;
+  /** What makes two markets' URLs equivalent — never serialised. */
+  group?: string;
 };
 
 export type SitemapChild = {
@@ -55,13 +58,13 @@ export function xmlEscape(value: string): string {
     .replace(/'/g, '&apos;');
 }
 
-/** The market-relative content of one market, as sitemap URLs. */
+/** The content of one market, as sitemap URLs at their registered addresses. */
 export async function countryUrls(country: CountryContext): Promise<SitemapUrl[]> {
   const origin = base();
-  const [pages, products] = await Promise.all([
+  const [pages, products, links] = await Promise.all([
     prisma.page.findMany({
       where: { ...publishedPageWhere(), noIndex: false, countryId: country.id },
-      select: { slug: true, updatedAt: true, isHomepage: true },
+      select: { id: true, slug: true, updatedAt: true, isHomepage: true },
     }),
     prisma.productCountry.findMany({
       where: {
@@ -72,24 +75,27 @@ export async function countryUrls(country: CountryContext): Promise<SitemapUrl[]
         OR: [{ publishedAt: null }, { publishedAt: { lte: new Date() } }],
         product: { deletedAt: null, noIndex: false },
       },
-      select: { updatedAt: true, product: { select: { slug: true } } },
+      select: { updatedAt: true, product: { select: { id: true, slug: true } } },
     }),
+    loadLinks(),
   ]);
 
-  const url = (path: string) => `${origin}${countryPath(country, path)}`.replace(/\/$/, '') || origin;
+  const url = (path: string) => `${origin}${path}`.replace(/\/$/, '') || origin;
 
   return [
     ...pages.map((page) => ({
-      loc: url(page.slug),
+      loc: url(links.pageById(page.id, country.id) ?? countryPath(country, page.slug)),
       lastmod: page.updatedAt,
       changefreq: 'weekly',
       priority: page.isHomepage || page.slug === '' ? 1 : 0.8,
+      group: `page:${page.slug}`,
     })),
     ...products.map((row) => ({
-      loc: url(`products/${row.product.slug}`),
+      loc: url(links.byId('PRODUCT', row.product.id, country.id) ?? links.product(country, row.product.slug)),
       lastmod: row.updatedAt,
       changefreq: 'weekly',
       priority: 0.9,
+      group: `product:${row.product.id}`,
     })),
   ];
 }
@@ -102,7 +108,7 @@ export async function countryUrls(country: CountryContext): Promise<SitemapUrl[]
  */
 export async function blogUrls(): Promise<SitemapUrl[]> {
   const origin = base();
-  const [settings, posts, categories, tags] = await Promise.all([
+  const [settings, posts, categories, tags, links] = await Promise.all([
     prisma.blogSettings.findUnique({ where: { id: 'singleton' }, select: { noIndex: true } }),
     prisma.blogPost.findMany({
       where: { ...publishedPostWhere(), noIndex: false },
@@ -117,6 +123,7 @@ export async function blogUrls(): Promise<SitemapUrl[]> {
       where: { isActive: true, noIndex: false, posts: { some: { post: publishedPostWhere() } } },
       select: { slug: true, updatedAt: true, createdAt: true },
     }),
+    loadLinks(),
   ]);
 
   if (settings?.noIndex) return [];
@@ -135,7 +142,7 @@ export async function blogUrls(): Promise<SitemapUrl[]> {
     if (seen.has(post.slug)) continue;
     seen.add(post.slug);
     urls.push({
-      loc: `${origin}/blog/${post.slug}`,
+      loc: `${origin}${links.post(post.slug)}`,
       lastmod: post.updatedAt,
       changefreq: 'monthly',
       priority: 0.6,
@@ -143,7 +150,7 @@ export async function blogUrls(): Promise<SitemapUrl[]> {
   }
   for (const category of categories) {
     urls.push({
-      loc: `${origin}/blog/category/${category.slug}`,
+      loc: `${origin}${links.blogCategory(category.slug)}`,
       lastmod: category.updatedAt,
       changefreq: 'weekly',
       priority: 0.5,
@@ -151,7 +158,7 @@ export async function blogUrls(): Promise<SitemapUrl[]> {
   }
   for (const tag of tags) {
     urls.push({
-      loc: `${origin}/blog/tag/${tag.slug}`,
+      loc: `${origin}${links.blogTag(tag.slug)}`,
       lastmod: tag.updatedAt ?? tag.createdAt,
       changefreq: 'weekly',
       priority: 0.4,
@@ -161,15 +168,15 @@ export async function blogUrls(): Promise<SitemapUrl[]> {
 }
 
 /**
- * Adds reciprocal hreflang to a market's page URLs.
+ * Adds reciprocal hreflang to a market's URLs.
  *
  * Only where a real equivalent is published in the other market: an alternate
- * pointing at a page that does not exist is worse than none, and a market that
- * has not been given a page yet must not have one claimed on its behalf.
+ * pointing at a page that does not exist is worse than none. Equivalents are
+ * paired by identity — the same product, or the page with the same slug — and
+ * each market's own registered address is used, so markets whose URLs differ
+ * still pair correctly.
  *
- * Nothing is canonicalised to India. Each market's page is its own canonical —
- * canonicalising every market to the root would tell search engines the other
- * markets are duplicates that need not be shown.
+ * Nothing is canonicalised to India. Each market's page is its own canonical.
  */
 export async function withAlternates(
   country: CountryContext,
@@ -178,38 +185,28 @@ export async function withAlternates(
   const countries = await listIndexableCountries();
   if (countries.length < 2) return urls;
 
-  const origin = base();
-  const slugs = await prisma.page.findMany({
-    where: { ...publishedPageWhere(), noIndex: false },
-    select: { slug: true, countryId: true },
-  });
-
-  // slug → the markets that actually publish that page.
-  const bySlug = new Map<string, Set<string>>();
-  for (const page of slugs) {
-    const set = bySlug.get(page.slug) ?? new Set<string>();
-    set.add(page.countryId);
-    bySlug.set(page.slug, set);
-  }
-
-  const prefixOf = (loc: string) => {
-    const path = loc.slice(origin.length) || '/';
-    const stripped = country.slug ? path.replace(new RegExp(`^/${country.slug}`), '') : path;
-    return stripped.replace(/^\/+|\/+$/g, '');
+  const others = countries.filter((candidate) => candidate.id !== country.id);
+  const all = [country, ...others];
+  const lists = await Promise.all(others.map((candidate) => countryUrls(candidate)));
+  // group → market id → loc
+  const byGroup = new Map<string, Map<string, string>>();
+  const record = (market: CountryContext, list: SitemapUrl[]) => {
+    for (const entry of list) {
+      if (!entry.group) continue;
+      const map = byGroup.get(entry.group) ?? new Map<string, string>();
+      map.set(market.id, entry.loc);
+      byGroup.set(entry.group, map);
+    }
   };
+  record(country, urls);
+  others.forEach((market, index) => record(market, lists[index]!));
 
   return urls.map((url) => {
-    const slug = prefixOf(url.loc);
-    const owners = bySlug.get(slug);
+    const owners = url.group ? byGroup.get(url.group) : undefined;
     if (!owners || owners.size < 2) return url;
-
-    const alternates = countries
+    const alternates = all
       .filter((candidate) => owners.has(candidate.id))
-      .map((candidate) => ({
-        hreflang: candidate.locale,
-        href: `${origin}${countryPath(candidate, slug)}`.replace(/\/$/, '') || origin,
-      }));
-
+      .map((candidate) => ({ hreflang: candidate.locale, href: owners.get(candidate.id)! }));
     return alternates.length > 1 ? { ...url, alternates } : url;
   });
 }

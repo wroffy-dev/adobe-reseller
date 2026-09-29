@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { loadLinks } from '@/lib/urls/links';
 import { getDefaultCountry } from '@/lib/country/registry';
 import {
   blogArchiveMetadata,
@@ -30,6 +31,6 @@ export async function generateMetadata({
 }
 
 export default async function BlogIndex({ searchParams }: { searchParams: SearchParams }) {
-  const [country, params] = await Promise.all([getDefaultCountry(), searchParams]);
+  const [country, params] = await Promise.all([getDefaultCountry(), searchParams, loadLinks()]);
   return <BlogArchiveSurface country={country} searchParams={params} />;
 }

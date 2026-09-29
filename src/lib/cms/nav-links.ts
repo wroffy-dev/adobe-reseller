@@ -1,4 +1,5 @@
 import { countryPath, countryHref } from '@/lib/country/routing';
+import { links } from '@/lib/urls/links';
 import type { CountryContext } from '@/lib/country/types';
 import type { NavLinkType } from '@prisma/client';
 
@@ -20,7 +21,7 @@ import type { NavLinkType } from '@prisma/client';
 export type LinkableItem = {
   linkType: NavLinkType;
   url: string | null;
-  page: { slug: string; deletedAt: Date | null } | null;
+  page: { id?: string; slug: string; deletedAt: Date | null } | null;
   product: { slug: string; deletedAt: Date | null } | null;
   blogPost: { slug: string; deletedAt: Date | null } | null;
   blogCategory: { slug: string } | null;
@@ -34,20 +35,18 @@ export function navHref(item: LinkableItem, country: CountryContext): string | n
   switch (item.linkType) {
     case 'PAGE': {
       const page = live(item.page);
-      return page ? countryPath(country, page.slug) : null;
+      return page ? (page.id ? links().pageById(page.id, country.id) : null) ?? links().page(country, page.slug) : null;
     }
     case 'PRODUCT': {
       const product = live(item.product);
-      return product ? countryPath(country, `products/${product.slug}`) : null;
+      return product ? links().product(country, product.slug) : null;
     }
     case 'BLOG_POST': {
       const post = live(item.blogPost);
-      return post ? countryPath(country, `blog/${post.slug}`) : null;
+      return post ? links().post(post.slug) : null;
     }
     case 'BLOG_CATEGORY':
-      return item.blogCategory
-        ? countryPath(country, `blog/category/${item.blogCategory.slug}`)
-        : null;
+      return item.blogCategory ? links().blogCategory(item.blogCategory.slug) : null;
     default:
       return item.url ? countryHref(country, item.url) : null;
   }

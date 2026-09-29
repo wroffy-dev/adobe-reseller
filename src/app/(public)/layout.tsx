@@ -19,6 +19,7 @@ import { resolveMarketOptions } from "@/lib/country/switch";
 import { countryPath, contentSlug, countryHref } from "@/lib/country/routing";
 import type { CountryContext } from "@/lib/country/types";
 import type { ButtonVariant } from "@/components/ui/button";
+import { loadLinks } from "@/lib/urls/links";
 
 export default async function PublicLayout({
   children,
@@ -35,6 +36,9 @@ export default async function PublicLayout({
    * costs no extra query.
    */
   const { country, path } = await resolveCountryPath(pathname);
+  // Fresh URL-registry addresses for every link rendered below (menus, cards,
+  // breadcrumbs). One cached query, shared by the whole request.
+  await loadLinks();
 
   // A CMS page can opt out of the site header or footer. Other public routes
   // (blog, products) always show both. getPublishedPage is request-cached, so

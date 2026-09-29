@@ -4,6 +4,7 @@ import type { CountryContext } from '@/lib/country/types';
 import type { ResolvedBlogSettings, BlogCardSettings } from './blog-settings';
 import type { TocItem } from './blog-toc';
 import type { CardOverrides } from './blog-blocks';
+import { links } from '@/lib/urls/links';
 
 /**
  * Everything a blog block needs that is not its own content.
@@ -96,9 +97,8 @@ export function resolveCard(
  * without knowing which market it is in.
  */
 export const blogPath = (country: CountryContext) => countryPath(country, 'blog');
-export const categoryPath = (country: CountryContext, slug: string) =>
-  countryPath(country, `blog/category/${slug}`);
-export const tagPath = (country: CountryContext, slug: string) =>
-  countryPath(country, `blog/tag/${slug}`);
-export const postPath = (country: CountryContext, slug: string) =>
-  countryPath(country, `blog/${slug}`);
+// Articles, categories and tags take their addresses from the URL registry.
+// The blog is root-only, so the market does not change them.
+export const categoryPath = (_country: CountryContext, slug: string) => links().blogCategory(slug);
+export const tagPath = (_country: CountryContext, slug: string) => links().blogTag(slug);
+export const postPath = (_country: CountryContext, slug: string) => links().post(slug);
