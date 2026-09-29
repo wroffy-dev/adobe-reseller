@@ -12,6 +12,7 @@ import {
   URL_CONTENT_LABELS,
 } from './paths';
 import { taxonomyPageSlug } from '@/lib/cms/taxonomy-pages';
+import { revalidateUrlChanges } from './revalidate';
 
 /**
  * The URL registry: the one authority for which content lives at which
@@ -951,6 +952,7 @@ export async function syncContentRoutes(
       return applyPlan(tx, ctx, plan, { actor, action, recordCreates: true });
     });
     invalidateLinkIndex();
+    revalidateUrlChanges(report.changes);
     return report;
   } catch (error) {
     console.error('[urls] route sync failed', error);

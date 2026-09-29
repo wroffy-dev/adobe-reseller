@@ -465,9 +465,14 @@ Breadcrumb on posts; FAQPage derived automatically from any FAQ block on a page.
 `robots.txt` is generated from the same settings, including a site-wide
 disallow when the SEO screen's "hide from search engines" switch is on.
 
-Redirects are checked only when a request would otherwise 404 — the lookup costs
-nothing on the happy path. Saving a redirect walks the existing chain and
-refuses anything that would close a loop.
+Public addresses come from the URL registry (`src/lib/urls/`): one `UrlRoute`
+per content item per market, with a unique normalised path. Every public route —
+the catch-all and the concrete `/products` and `/blog` routes — resolves through
+it in `generateMetadata`: registry, then redirects, then legacy addresses, then
+404. A moved address therefore answers a real HTTP 308 before anything streams,
+not only after a 404. Redirects are kept flat (every old address points at the
+current one), loops and chains are refused, and admin, API, auth and asset
+requests never touch the lookup. See [docs/URL-MANAGER.md](docs/URL-MANAGER.md).
 
 ---
 

@@ -42,6 +42,7 @@ import {
   type LinkChange,
   type ReferenceHit,
 } from './references';
+import { revalidateUrlChanges } from './revalidate';
 
 /**
  * The Slug & URL Manager's operations.
@@ -467,6 +468,7 @@ async function applyPrepared(
     };
   });
   invalidateLinkIndex();
+  revalidateUrlChanges(result.changes);
   return result;
 }
 
@@ -1013,7 +1015,7 @@ export async function healthReport(allowed: Allowed) {
       broken.push({ where: 'Product button', label: product.name, href: product.ctaUrl, adminHref: `/admin/products/${product.id}` });
     }
   }
-  const HREF = /"(\/[a-z0-9][a-z0-9/_-]*)(?:[?#][^"]*)?"/gi;
+  const HREF = /"(\/[a-z][a-z0-9/_-]*)(?:[?#][^"]*)?"/gi;
   for (const section of sections) {
     if (!inMarket(section.page.countryId)) continue;
     const text = JSON.stringify(section.content);

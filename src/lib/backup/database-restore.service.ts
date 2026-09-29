@@ -17,6 +17,7 @@ import { restoreMedia, removeStaging } from './media-restore.service';
 import { createBackup } from './backup.service';
 import { withBackupLock } from './lock.service';
 import { setMaintenanceMode } from './maintenance';
+import { runBackfill } from '@/lib/urls/backfill';
 
 /**
  * Restoring a backup.
@@ -171,6 +172,14 @@ async function runRestore(backupId: string, actor: SessionUser | null): Promise<
       await prisma.backupRestore
         .createMany({ data: restoreHistory, skipDuplicates: true })
         .catch((error) => console.error('[backup] restore history merge failed', sanitiseError(error)));
+
+      // The URL registry is part of the dump, but a backup taken before it
+      // existed — or content restored without its routes — would leave the
+      // two out of step. Re-registering is idempotent and never moves a
+      // public address, so the restored site resolves exactly its content.
+      await runBackfill(actor ? { id: actor.id, email: actor.email } : null).catch((error) =>
+        console.error('[backup] URL registry reconcile failed', sanitiseError(error)),
+      );
     }
 
     // ---- 6. Media ----------------------------------------------------------

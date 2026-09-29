@@ -8,7 +8,51 @@ This project uses [semantic versioning](https://semver.org): MAJOR.MINOR.PATCH.
 
 ---
 
-## [Unreleased]
+## [1.2.0] — 2026-09-29
+
+### Added
+
+- **Slug & URL Manager** (Admin → Content & SEO → Slug & URL Manager). Every
+  public address — products, pages, blog posts, blog categories and tags, and
+  category/brand landing pages — in one registry (`UrlRoute`) keyed by content
+  id and market. Custom URLs per market (`/dropbox`, `/ae/dropbox`,
+  `/software/dropbox-business`), URL patterns globally or per market
+  (`/{slug}`, `/software/{slug}`), bulk prefix replacement, CSV import/export
+  with row-by-row validation, History with validated restore, Conflicts, and
+  URL Health (recorded 404s mapped to published destinations, broken internal
+  links, redirect problems). Precedence: custom path → market pattern → global
+  pattern → built-in default. See [docs/URL-MANAGER.md](docs/URL-MANAGER.md).
+- **Automatic permanent redirects.** A published address that moves answers a
+  real HTTP 308 straight to the current one — resolved in the concrete
+  `/products` and `/blog` routes as well as the catch-all, before streaming —
+  with the query string (UTM tags) preserved. Every earlier address is
+  re-aimed at the newest, so there are no chains; moving back removes the
+  reverse redirect.
+- **Registry-aware links everywhere:** product cards, menus, breadcrumbs,
+  canonical and Open Graph URLs, JSON-LD, sitemaps, hreflang (paired by
+  content identity) and the market switcher.
+- `npm run urls:backfill` — idempotent registration of every current URL.
+
+### Changed
+
+- Every content action (create, edit, publish, delete, restore, duplicate,
+  market pricing, country sync, trash, market prefix change, backup restore)
+  re-syncs the URL registry, and slug edits are checked against every content
+  type before saving — an address held by a page, a product or a redirect can
+  no longer be taken by another.
+- Redirects: sources are normalised and unique (`Redirect.sourceKey`); the
+  classic Redirects screen now saves through the same rules (no redirect over a
+  live page, no chain, no loop, market access enforced) and records hits with
+  `lastHitAt`. Status codes are labelled as sent: 308 Permanent, 307 Temporary.
+- Category and brand landing pages are tied to their taxonomy by id
+  (`Page.taxonomyKind`, `Page.taxonomyId`) rather than by assuming their slug.
+
+### Migration
+
+- `20260929100000_url_registry` — new tables and nullable columns only; fills
+  `Redirect.sourceKey` and the taxonomy page links. No public address changes:
+  the registry resolver stays off until switched on after
+  `npm run urls:backfill` and a review of any collisions.
 
 ### Fixed
 

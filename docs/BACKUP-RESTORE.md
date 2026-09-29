@@ -196,6 +196,16 @@ killed container cannot wedge the system permanently.
 
 ---
 
+### URL registry after a restore
+
+The URL registry (`UrlRoute`, `UrlPattern`, `UrlChange`, `NotFoundLog`,
+`UrlSettings`) is part of the database dump and comes back with it. After the
+database is restored the registry is re-synced automatically — the same
+idempotent step as `npm run urls:backfill` — so a backup taken before the
+registry existed, or one whose routes disagree with its content, still resolves
+exactly the content it contains. No public address is changed by that step.
+See [URL-MANAGER.md](URL-MANAGER.md).
+
 ## Importing an archive
 
 **Admin → Settings → Backup & restore → Import archive** accepts a `.zip`
