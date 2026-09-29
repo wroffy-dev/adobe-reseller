@@ -256,6 +256,12 @@ export const ADMIN_NAV: AdminNavModule[] = [
         description: 'Titles, social sharing and indexing',
       },
       {
+        label: 'Slug & URL Manager',
+        href: '/admin/slug-manager',
+        permission: 'seo.manage',
+        description: 'URLs, patterns, redirects and URL health',
+      },
+      {
         label: 'Redirects',
         href: '/admin/redirects',
         permission: 'seo.manage',

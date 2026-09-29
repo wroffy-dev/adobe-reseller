@@ -409,6 +409,8 @@ export type ApplyInput = {
   action?: string;
   note?: string;
   batchId?: string;
+  /** Refuse if anything in the plan conflicts, not only the edited routes. */
+  strict?: boolean;
 };
 
 export type ApplyResult = {
@@ -437,7 +439,7 @@ async function applyPrepared(
       throw new UrlManagerError('These URLs changed since the preview. Preview again before applying.');
     }
     const conflicts = plan.items.filter((i) => i.status === 'conflict');
-    const focused = conflicts.filter((i) => (i.routeId && prepared.routes.has(i.routeId)) || prepared.slugs.has(`${i.kind}:${i.contentId}`));
+    const focused = input.strict ? conflicts : conflicts.filter((i) => (i.routeId && prepared.routes.has(i.routeId)) || prepared.slugs.has(`${i.kind}:${i.contentId}`));
     if (focused.length) {
       throw new UrlManagerError(`Not applied — ${focused.length} conflict(s): ${focused.map((i) => `${i.newPath} (${i.reason})`).join('; ')}`);
     }
@@ -529,7 +531,7 @@ export async function applyPatternChange(change: PatternChange, input: ApplyInpu
       saved = pattern;
       return { scope: patternScope(change), routes: new Map(), slugs: new Map(), errors: [], patterns: patternsWith(ctx, change, pattern) };
     },
-    { ...input, action: 'pattern', note: `Pattern for ${URL_CONTENT_LABELS[change.type]} ${change.countryId ? 'in one market' : 'everywhere'} set to ${change.pattern ?? 'inherited'}` },
+    { ...input, strict: true, action: 'pattern', note: `Pattern for ${URL_CONTENT_LABELS[change.type]} ${change.countryId ? 'in one market' : 'everywhere'} set to ${change.pattern ?? 'inherited'}` },
     async (tx) => {
       const scopeKey = change.countryId ?? '*';
       if (saved === null) {

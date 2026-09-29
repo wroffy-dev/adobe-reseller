@@ -3,7 +3,15 @@
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { prisma } from '@/lib/db/prisma';
-import { authorize } from '@/lib/auth/guards';
+import { authorize, type SessionUser } from '@/lib/auth/guards';
+import { getUserCountryIds } from '@/lib/country/access';
+import { actorOf } from '@/lib/urls/registry';
+import {
+  UrlManagerError,
+  deleteRedirect as removeRedirect,
+  saveRedirect as saveRedirectWithRules,
+  setRedirectActive,
+} from '@/lib/urls/manager';
 import { recordAudit } from '@/lib/services/audit';
 import { sanitizeText } from '@/lib/utils/sanitize';
 import { success, failure, toActionError, type ActionResult } from '@/lib/utils/result';
@@ -110,7 +118,21 @@ const redirectSchema = z.object({
   note: optional(200),
 });
 
-const normalise = (value: string) => value.replace(/^\/+|\/+$/g, '').toLowerCase();
+/*
+ * The classic Redirects screen writes through the same service as the Slug &
+ * URL Manager, so both apply one set of rules: no redirect over a live page,
+ * no duplicate source, no loop, no chain, market access enforced.
+ */
+async function allowedCountries(user: SessionUser): Promise<string[] | null> {
+  if (user.role === 'super-admin') return null;
+  const assigned = await getUserCountryIds(user.id);
+  return assigned.length ? assigned : null;
+}
+
+function managerFailure(error: unknown): ActionResult<never> {
+  if (error instanceof UrlManagerError) return failure(error.message, { source: [error.message] });
+  return toActionError(error);
+}
 
 export async function saveRedirect(
   redirectId: string | null,
@@ -125,104 +147,46 @@ export async function saveRedirect(
       isActive: formData.get('isActive') !== 'false',
       note: formData.get('note'),
     });
-
-    if (normalise(input.source) === normalise(input.destination)) {
-      return failure('A redirect cannot point at itself.', {
-        destination: ['Choose a different destination'],
-      });
-    }
-
-    // Walk the existing chain to make sure this rule does not close a loop.
-    const chain = await detectLoop(input.source, input.destination, redirectId);
-    if (chain) {
-      return failure(`That would create a redirect loop: ${chain}`, {
-        destination: ['This destination redirects back to the source'],
-      });
-    }
-
-    const clash = await prisma.redirect.findFirst({
-      where: { source: input.source, ...(redirectId ? { id: { not: redirectId } } : {}) },
-      select: { id: true },
-    });
-    if (clash) {
-      return failure('A redirect already exists for that path.', { source: ['This path is already used'] });
-    }
-
-    const redirect = redirectId
-      ? await prisma.redirect.update({ where: { id: redirectId }, data: input })
-      : await prisma.redirect.create({ data: input });
+    const saved = await saveRedirectWithRules(
+      { id: redirectId, ...input, note: input.note ?? null },
+      actorOf(user),
+      await allowedCountries(user),
+    );
 
     await recordAudit({
       actor: user,
       action: redirectId ? 'updated' : 'created',
       entity: 'Redirect',
-      entityId: redirect.id,
-      summary: `${input.source} → ${input.destination}`,
+      entityId: saved.id,
+      summary: `${input.source} → ${saved.destination}`,
     });
 
     revalidatePath('/admin/redirects');
-    return success({ id: redirect.id }, 'Redirect saved.');
+    revalidatePath('/admin/slug-manager');
+    return success({ id: saved.id }, 'Redirect saved.');
   } catch (error) {
-    return toActionError(error);
+    return managerFailure(error);
   }
-}
-
-/**
- * Follows the destination through existing redirects. Returns the chain as a
- * string when it leads back to the source, otherwise null.
- */
-async function detectLoop(
-  source: string,
-  destination: string,
-  ignoreId: string | null,
-): Promise<string | null> {
-  const seen = new Set<string>([normalise(source)]);
-  const chain = [source];
-  let current = destination;
-
-  for (let depth = 0; depth < 12; depth += 1) {
-    chain.push(current);
-    if (seen.has(normalise(current))) return chain.join(' → ');
-    seen.add(normalise(current));
-
-    if (/^https?:\/\//i.test(current)) return null;
-
-    const next: { destination: string } | null = await prisma.redirect.findFirst({
-      where: {
-        isActive: true,
-        source: current,
-        ...(ignoreId ? { id: { not: ignoreId } } : {}),
-      },
-      select: { destination: true },
-    });
-    if (!next) return null;
-    current = next.destination;
-  }
-
-  return chain.join(' → ');
 }
 
 export async function toggleRedirect(redirectId: string): Promise<ActionResult> {
   try {
-    await authorize('seo.manage');
+    const user = await authorize('seo.manage');
     const redirect = await prisma.redirect.findUnique({ where: { id: redirectId } });
     if (!redirect) return failure('That redirect no longer exists.');
 
-    await prisma.redirect.update({ where: { id: redirectId }, data: { isActive: !redirect.isActive } });
+    await setRedirectActive(redirectId, !redirect.isActive, await allowedCountries(user));
     revalidatePath('/admin/redirects');
     return success(undefined, redirect.isActive ? 'Redirect disabled.' : 'Redirect enabled.');
   } catch (error) {
-    return toActionError(error);
+    return managerFailure(error);
   }
 }
 
 export async function deleteRedirect(redirectId: string): Promise<ActionResult> {
   try {
     const user = await authorize('seo.manage');
-    const redirect = await prisma.redirect.findUnique({ where: { id: redirectId } });
-    if (!redirect) return failure('That redirect no longer exists.');
-
-    await prisma.redirect.delete({ where: { id: redirectId } });
+    const redirect = await removeRedirect(redirectId, await allowedCountries(user));
 
     await recordAudit({
       actor: user,
@@ -235,6 +199,6 @@ export async function deleteRedirect(redirectId: string): Promise<ActionResult> 
     revalidatePath('/admin/redirects');
     return success(undefined, 'Redirect deleted.');
   } catch (error) {
-    return toActionError(error);
+    return managerFailure(error);
   }
 }
