@@ -20,6 +20,16 @@ export type SeoInput = {
   /** The market this page belongs to. Resolved from the request when omitted. */
   country?: CountryContext;
   /**
+   * The full public path from the URL registry, prefix included. When given it
+   * is the canonical address, and `path` is ignored.
+   */
+  fullPath?: string;
+  /**
+   * Each market's own full path for this content, by country id — hreflang by
+   * content identity, so markets whose URLs differ still pair up.
+   */
+  alternatePaths?: Record<string, string>;
+  /**
    * Markets where an equivalent, indexable page is live.
    *
    * hreflang is emitted only for these, so an alternate can never point at a
@@ -78,7 +88,9 @@ export async function buildMetadata(input: SeoInput): Promise<Metadata> {
 
   const description = input.description?.trim() || local.defaultDescription;
   const path = input.path ?? '/';
-  const canonical = input.canonicalUrl?.trim() || absoluteCountryUrl(country, path);
+  const canonical =
+    input.canonicalUrl?.trim() ||
+    (input.fullPath ? absoluteUrl(input.fullPath) : absoluteCountryUrl(country, path));
   const ogImage = input.ogImageUrl || local.defaultOgImageUrl || site.ogImageUrl || null;
 
   /*
@@ -98,7 +110,16 @@ export async function buildMetadata(input: SeoInput): Promise<Metadata> {
    * exists in one market alone simply gets no hreflang, which is exactly right.
    */
   const languages: Record<string, string> = {};
-  if (!noIndex && input.alternateCountryIds && input.alternateCountryIds.length > 1) {
+  if (!noIndex && input.alternatePaths && Object.keys(input.alternatePaths).length > 1) {
+    const root = activeCountries.find((candidate) => candidate.isDefault);
+    for (const candidate of activeCountries) {
+      const own = input.alternatePaths[candidate.id];
+      if (own) languages[candidate.locale] = absoluteUrl(own);
+    }
+    if (root && input.alternatePaths[root.id]) {
+      languages['x-default'] = absoluteUrl(input.alternatePaths[root.id]!);
+    }
+  } else if (!noIndex && input.alternateCountryIds && input.alternateCountryIds.length > 1) {
     const allowed = new Set(input.alternateCountryIds);
     for (const candidate of activeCountries) {
       if (!allowed.has(candidate.id)) continue;

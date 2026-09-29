@@ -163,6 +163,35 @@ enum RedirectType {
   TEMPORARY
 }
 
+/// Where a redirect came from. Only MANUAL rules are typed by a person; the
+/// others are written by the URL registry and say why they exist.
+enum RedirectOrigin {
+  MANUAL
+  /// A published URL changed and its old address was kept alive.
+  AUTO
+  /// A recorded 404 mapped to a destination from URL Health.
+  HEALTH
+  /// Imported from a CSV file.
+  IMPORT
+}
+
+/// The kinds of content the URL registry addresses.
+enum UrlContentType {
+  PRODUCT
+  PAGE
+  BLOG_POST
+  BLOG_CATEGORY
+  BLOG_TAG
+  CATEGORY_PAGE
+  BRAND_PAGE
+}
+
+/// Whether a route follows its pattern or carries its own path.
+enum UrlRouteMode {
+  PATTERN
+  CUSTOM
+}
+
 enum ScriptPlacement {
   HEAD
   BODY_START
@@ -308,6 +337,8 @@ model Country {
   staffAccess          UserCountry[]
   consentNotices       ConsentNotice[]
   consentRecords       ConsentRecord[]
+  urlRoutes            UrlRoute[]
+  urlPatterns          UrlPattern[]
   syncMappingsAsSource CountrySyncMapping[]     @relation("SyncSource")
   syncMappingsAsTarget CountrySyncMapping[]     @relation("SyncTarget")
   syncRunsAsSource     CountrySyncRun[]         @relation("SyncRunSource")
@@ -678,6 +709,12 @@ model Page {
   // Optional taxonomy. Nullable so every existing page stays valid.
   categoryId String?
 
+  /// A generated category or brand landing page is tied to its taxonomy by id,
+  /// not by its slug, so renaming either never loses the connection.
+  /// "category" | "brand" — null for every ordinary page.
+  taxonomyKind String?
+  taxonomyId   String?
+
   // Layout controls
   showHeader Boolean @default(true)
   showFooter Boolean @default(true)
@@ -712,6 +749,7 @@ model Page {
   navigationItems NavigationItem[]
 
   @@unique([countryId, slug])
+  @@unique([countryId, taxonomyKind, taxonomyId])
   @@index([slug])
   @@index([countryId])
   @@index([countryId, status, publishedAt])
@@ -2289,10 +2327,28 @@ model Redirect {
   hitCount    Int          @default(0)
   note        String?
 
+  /// The normalised source ("/ae/old-plan", lower case, no trailing slash).
+  /// Unique, so two rules can never claim one address. Null only for a legacy
+  /// row whose normalised form collides with another — URL Health lists those.
+  sourceKey     String?        @unique
+  origin        RedirectOrigin @default(MANUAL)
+  /// The route this redirect leads to, when it leads to registered content.
+  /// Every redirect pointing at a route is re-aimed when that route moves, so
+  /// an old address always lands on the current one in a single hop.
+  targetRouteId String?
+  /// What the destination was, kept after the content is deleted.
+  targetLabel   String?
+  lastHitAt     DateTime?
+  createdById   String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  targetRoute UrlRoute? @relation(fields: [targetRouteId], references: [id], onDelete: SetNull)
+
   @@index([isActive])
+  @@index([targetRouteId])
+  @@index([origin])
 }
 
 // ---------------------------------------------------------------------------
@@ -2660,4 +2716,139 @@ model CountrySyncRun {
 
   @@index([targetCountryId, startedAt])
   @@index([status])
+}
+
+// ---------------------------------------------------------------------------
+// URL registry
+// ---------------------------------------------------------------------------
+
+/// One public address of one piece of content in one market.
+///
+/// The single authority for "what lives at this URL". Content identity (the
+/// product, page or article id) is kept apart from its public path, so a
+/// market can have its own URL for a shared product without renaming the
+/// product everywhere. `pathKey` is unique across every content type.
+model UrlRoute {
+  id             String         @id @default(cuid())
+  contentType    UrlContentType
+  /// Product.id, Page.id, BlogPost.id, BlogCategory.id or BlogTag.id.
+  contentId      String
+  countryId      String
+  /// The content's own slug when this route was last synced — for lookups.
+  contentSlug    String
+  /// Name and status at the last sync, so listings need no per-row lookups.
+  label          String  @default("")
+  contentStatus  String  @default("DRAFT")
+  isHomepage     Boolean @default(false)
+  /// The full public path, market prefix included: "/ae/dropbox".
+  path           String
+  /// `path` normalised for comparison. Unique across all content.
+  pathKey        String         @unique
+  mode           UrlRouteMode   @default(PATTERN)
+  /// Market-relative override, used when mode is CUSTOM: "/software/dropbox".
+  customPath     String?
+  /// Whether the content was publicly reachable at the last sync. A change to
+  /// a public route leaves a permanent redirect behind; a draft's does not.
+  isPublic       Boolean        @default(false)
+  /// The path the content should have moved to but could not, because
+  /// another owner holds it. Listed under Conflicts until resolved.
+  conflictPath   String?
+  conflictReason String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  country   Country    @relation(fields: [countryId], references: [id], onDelete: Cascade)
+  redirects Redirect[]
+
+  @@unique([contentType, contentId, countryId])
+  @@index([contentType, contentSlug])
+  @@index([countryId])
+  @@index([conflictPath])
+  @@index([contentType, countryId])
+}
+
+/// A URL structure for one content type, globally or for one market.
+///
+/// Precedence when a route is built: its own custom path, then the market's
+/// pattern, then the global one, then the built-in default.
+model UrlPattern {
+  id          String         @id @default(cuid())
+  contentType UrlContentType
+  /// Null for the global pattern.
+  countryId   String?
+  /// countryId, or "*" for the global pattern — a non-null key so the pair is
+  /// genuinely unique (Postgres treats NULLs as distinct).
+  scopeKey    String
+  /// "/{slug}", "/software/{slug}" …
+  pattern     String
+  updatedById String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  country Country? @relation(fields: [countryId], references: [id], onDelete: Cascade)
+
+  @@unique([contentType, scopeKey])
+}
+
+/// Every change to a public address: who, when, from where to where.
+///
+/// Deliberately without foreign keys, so the history of deleted content and
+/// removed markets survives them.
+model UrlChange {
+  id           String          @id @default(cuid())
+  /// Groups the rows of one bulk operation, pattern change or import.
+  batchId      String?
+  routeId      String?
+  contentType  UrlContentType?
+  contentId    String?
+  countryId    String?
+  contentLabel String
+  oldPath      String?
+  newPath      String?
+  /// created | renamed | pattern | bulk | import | reset | restored | deleted | redirect
+  action       String
+  note         String?         @db.Text
+  actorId      String?
+  actorEmail   String?
+
+  createdAt DateTime @default(now())
+
+  @@index([contentType, contentId])
+  @@index([routeId])
+  @@index([batchId])
+  @@index([createdAt])
+}
+
+/// A public address that answered 404, for URL Health.
+///
+/// The path only — never the query string, which can carry personal data —
+/// and the referring host rather than the full referrer.
+model NotFoundLog {
+  id           String    @id @default(cuid())
+  pathKey      String    @unique
+  path         String
+  hits         Int       @default(1)
+  referrerHost String?
+  firstSeenAt  DateTime  @default(now())
+  lastSeenAt   DateTime  @default(now())
+  /// Set when the address is mapped to a destination or dismissed.
+  resolvedAt   DateTime?
+  resolution   String?
+
+  @@index([resolvedAt, lastSeenAt])
+}
+
+/// Registry switches. One row, id "singleton".
+model UrlSettings {
+  id              String    @id @default("singleton")
+  /// Off until the backfill has run and its collisions are reviewed. While
+  /// off, the public site resolves URLs exactly as it did before.
+  resolverEnabled Boolean   @default(false)
+  backfilledAt    DateTime?
+  activatedAt     DateTime?
+  /// Unresolved collisions found by the last backfill run.
+  lastCollisions  Json      @default("[]")
+  updatedAt       DateTime  @updatedAt
 }

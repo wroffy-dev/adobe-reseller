@@ -111,7 +111,12 @@ export function countryBreadcrumbSchema(
   items: Array<{ name: string; path: string }>,
 ): Json {
   return breadcrumbSchema(
-    items.map((item) => ({ name: item.name, path: countryPath(country, item.path) })),
+    // A path starting with "/" is already a full public path (from the URL
+    // registry); anything else is market-relative and gains the prefix.
+    items.map((item) => ({
+      name: item.name,
+      path: item.path.startsWith('/') ? item.path : countryPath(country, item.path),
+    })),
   );
 }
 

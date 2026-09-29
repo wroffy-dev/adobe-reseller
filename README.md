@@ -34,6 +34,7 @@ information.
 - [Security notes](#security-notes)
 - [Troubleshooting](#troubleshooting)
 - [Countries](docs/MULTI-COUNTRY.md)
+- [Slug & URL Manager](docs/URL-MANAGER.md) — custom URLs, patterns, redirects, URL health
 - [Versioning and releases](VERSION_README.md)
 - [Changelog](CHANGELOG.md)
 

@@ -7,6 +7,8 @@ import {
   isSelfRedirect,
 } from '@/lib/seo/redirect-paths';
 import type { CountryContext } from '@/lib/country/types';
+import { recordNotFound } from '@/lib/urls/resolver';
+import { headers } from 'next/headers';
 
 /**
  * Redirects, for every address the site serves.
@@ -66,5 +68,13 @@ export async function redirectOrNotFound(
     if (target.permanent) permanentRedirect(target.destination);
     redirect(target.destination);
   }
+  // A miss is recorded for URL Health: the path only, never the query.
+  let referrer: string | null = null;
+  try {
+    referrer = (await headers()).get('referer');
+  } catch {
+    referrer = null;
+  }
+  await recordNotFound(full, referrer);
   return notFound();
 }

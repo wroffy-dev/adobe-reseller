@@ -13,6 +13,7 @@ import { ButtonLink, buttonClasses } from '@/components/ui/button';
 import { decimalToString } from '@/lib/utils/money';
 import { getAdminCountryScope } from '@/lib/country/admin';
 import type { Prisma } from '@prisma/client';
+import { loadLinks } from '@/lib/urls/links';
 
 export const metadata: Metadata = { title: 'Products' };
 export const dynamic = 'force-dynamic';
@@ -32,7 +33,7 @@ export default async function ProductsAdmin({
   }>;
 }) {
   const user = await requirePermission('products.view');
-  const scope = await getAdminCountryScope();
+  const [scope, links] = await Promise.all([getAdminCountryScope(), loadLinks()]);
   const params = await searchParams;
   const page = Math.max(1, Number(params.page) || 1);
 
@@ -146,6 +147,7 @@ export default async function ProductsAdmin({
       id: row.id,
       name: row.name,
       slug: row.slug,
+      publicHref: links.product(scope.country, row.slug),
       sku: row.sku,
       status: here?.status ?? row.status,
       isFeatured: here?.isFeatured ?? row.isFeatured,

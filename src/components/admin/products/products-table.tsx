@@ -25,6 +25,8 @@ export type ProductRow = {
   id: string;
   name: string;
   slug: string;
+  /** The live address in the market being edited, from the URL registry. */
+  publicHref: string;
   sku: string | null;
   status: string;
   isFeatured: boolean;
@@ -255,7 +257,7 @@ export function ProductsTable({
                     ) : null}
                     {row.status === 'PUBLISHED' ? (
                       <Link
-                        href={`/products/${row.slug}`}
+                        href={row.publicHref}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="rounded p-1.5 text-muted hover:bg-muted/10 hover:text-content"

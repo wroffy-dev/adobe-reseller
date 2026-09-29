@@ -16,6 +16,7 @@ import { resolveActionCountry } from '@/lib/country/admin';
 import { assertCountryAccess } from '@/lib/country/access';
 import { getCountryById, listActiveCountries } from '@/lib/country/registry';
 import { revalidateCountryBlog, revalidateAllCountryBlogs } from '@/lib/country/revalidate';
+import { syncContentRoutes, checkSlugAvailability, isAddressTaken, actorOf } from '@/lib/urls/registry';
 
 /** Revalidates a market's blog surfaces. */
 async function revalidatePost(countryId: string, slug?: string | null) {
@@ -102,7 +103,7 @@ export async function createBlogPost(formData: FormData): Promise<ActionResult<{
         where: { countryId_slug: { countryId: country.id, slug: candidate } },
         select: { id: true },
       });
-      return Boolean(existing);
+      return Boolean(existing) || (await isAddressTaken({ kind: 'post', slug: candidate }));
     });
 
     const content = sanitizeHtml(input.content);
@@ -155,6 +156,7 @@ export async function createBlogPost(formData: FormData): Promise<ActionResult<{
 
     revalidatePath('/admin/blog');
     await revalidatePost(post.countryId, slug);
+    await syncContentRoutes({ kind: 'post' }, actorOf(user), 'created');
     return success({ id: post.id }, 'Post created.');
   } catch (error) {
     return toActionError(error);
@@ -179,6 +181,8 @@ export async function updateBlogPost(postId: string, formData: FormData): Promis
       });
       if (clash)
         return failure('Another post already uses that URL.', { slug: ['This URL is taken'] });
+      const available = await checkSlugAvailability({ kind: 'post', contentId: postId, slug });
+      if (!available.ok) return failure(available.message, { slug: [available.message] });
     }
 
     const content = sanitizeHtml(input.content);
@@ -244,6 +248,7 @@ export async function updateBlogPost(postId: string, formData: FormData): Promis
     revalidatePath(`/admin/blog/${postId}`);
     await revalidatePost(before.countryId, before.slug);
     if (slug !== before.slug) await revalidatePost(before.countryId, slug);
+    await syncContentRoutes({ kind: 'post', ids: [postId] }, actorOf(user), 'renamed');
     return success(undefined, 'Post saved.');
   } catch (error) {
     return toActionError(error);
@@ -278,6 +283,7 @@ export async function setBlogPostStatus(
 
     revalidatePath('/admin/blog');
     await revalidatePost(post.countryId, post.slug);
+    await syncContentRoutes({ kind: 'post' }, actorOf(user), 'renamed');
     return success(undefined, `Post ${status.toLowerCase()}.`);
   } catch (error) {
     return toActionError(error);
@@ -399,6 +405,7 @@ export async function duplicateBlogPostToCountry(
 
     revalidatePath('/admin/blog');
     await revalidatePost(target.id, copy.slug);
+    await syncContentRoutes({ kind: 'post' }, actorOf(user), 'created');
     return success(
       { id: copy.id, replaced: Boolean(existing) },
       `Copied to ${target.name} as a draft.`,
@@ -423,7 +430,7 @@ export async function duplicateBlogPost(postId: string): Promise<ActionResult<{ 
         where: { countryId_slug: { countryId: source.countryId, slug: candidate } },
         select: { id: true },
       });
-      return Boolean(existing);
+      return Boolean(existing) || (await isAddressTaken({ kind: 'post', slug: candidate }));
     });
 
     const copy = await prisma.blogPost.create({
@@ -476,6 +483,7 @@ export async function duplicateBlogPost(postId: string): Promise<ActionResult<{ 
     });
 
     revalidatePath('/admin/blog');
+    await syncContentRoutes({ kind: 'post' }, actorOf(user), 'created');
     return success({ id: copy.id }, 'Post duplicated.');
   } catch (error) {
     return toActionError(error);
@@ -508,6 +516,7 @@ export async function deleteBlogPost(postId: string): Promise<ActionResult> {
 
     revalidatePath('/admin/blog');
     await revalidatePost(post.countryId, post.slug);
+    await syncContentRoutes({ kind: 'post', ids: [postId] }, actorOf(user), 'deleted');
     return success(undefined, 'Post deleted.');
   } catch (error) {
     return toActionError(error);
@@ -562,9 +571,14 @@ export async function saveBlogCategory(
               where: { slug: candidate },
               select: { id: true },
             });
-            return Boolean(existing);
+            return Boolean(existing) || (await isAddressTaken({ kind: 'blogCategory', slug: candidate }));
           })
         : input.slug;
+
+    if (categoryId !== null) {
+      const available = await checkSlugAvailability({ kind: 'blogCategory', contentId: categoryId, slug });
+      if (!available.ok) return failure(available.message, { slug: [available.message] });
+    }
 
     const data = {
       name: sanitizeText(input.name),
@@ -602,6 +616,7 @@ export async function saveBlogCategory(
     revalidatePath('/admin/blog/categories');
     // Categories are shared by every market, so every blog is affected.
     await revalidateAllCountryBlogs();
+    await syncContentRoutes({ kind: 'blogCategory' }, actorOf(user), 'renamed');
     return success({ id: category.id }, 'Category saved.');
   } catch (error) {
     return toActionError(error);
@@ -640,6 +655,7 @@ export async function deleteBlogCategory(categoryId: string): Promise<ActionResu
     revalidatePath('/admin/blog/categories');
     // Categories are shared by every market, so every blog is affected.
     await revalidateAllCountryBlogs();
+    await syncContentRoutes({ kind: 'blogCategory' }, actorOf(user), 'deleted');
     return success(
       undefined,
       category._count.posts > 0
@@ -701,6 +717,7 @@ export async function bulkBlogAction(input: unknown): Promise<ActionResult> {
     for (const countryId of new Set(posts.map((post) => post.countryId))) {
       await revalidatePost(countryId);
     }
+    await syncContentRoutes({ kind: 'post' }, actorOf(user), 'bulk');
     return success(undefined, `${posts.length} post(s) updated.`);
   } catch (error) {
     return toActionError(error);

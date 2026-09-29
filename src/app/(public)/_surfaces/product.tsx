@@ -4,7 +4,7 @@ import { getMediaByIds } from '@/lib/services/media';
 import { redirectOrNotFound } from '@/lib/services/redirects';
 import { taxonomyHrefs } from '@/lib/services/taxonomy-pages';
 import { getWebsiteSettings } from '@/lib/services/settings';
-import { buildMetadata, absoluteCountryUrl } from '@/lib/seo/metadata';
+import { buildMetadata, absoluteUrl } from '@/lib/seo/metadata';
 import { JsonLd } from '@/components/seo/json-ld';
 import { countryBreadcrumbSchema, productSchema } from '@/lib/seo/structured-data';
 import { SectionList, type RenderableSection } from '@/components/cms/section-renderer';
@@ -14,6 +14,8 @@ import { segmentDetail } from '@/lib/cms/product-segments';
 import type { ProductRenderContext } from '@/lib/cms/product-render';
 import { cn } from '@/lib/utils/cn';
 import type { CountryContext } from '@/lib/country/types';
+import { loadLinks } from '@/lib/urls/links';
+import { notFound } from 'next/navigation';
 
 /**
  * A product page, in one market.
@@ -27,21 +29,32 @@ import type { CountryContext } from '@/lib/country/types';
 export async function productMetadata(
   country: CountryContext,
   slug: string,
+  /** The registered public path, when the URL registry resolved this request. */
+  fullPath?: string,
 ): Promise<Metadata> {
-  const [row, alternates] = await Promise.all([
+  const [row, alternates, links] = await Promise.all([
     getProductSeo(country.id, slug),
     findLiveProductCountries(slug),
+    loadLinks(),
   ]);
   if (!row) return { title: 'Product not found', robots: { index: false, follow: false } };
 
   const product = row.product;
+  const canonicalPath = fullPath ?? links.product(country, slug);
+  // hreflang by product identity, so markets with different URLs still pair.
+  const live = new Set(alternates);
+  const everywhere = links.everywhere('PRODUCT', product.id).filter((entry) => live.has(entry.countryId));
 
   return buildMetadata({
     title: row.seoTitle || product.seoTitle || product.name,
     description: row.seoDescription || product.seoDescription || product.shortDescription,
     path: `/products/${slug}`,
+    fullPath: canonicalPath,
     country,
     alternateCountryIds: alternates,
+    alternatePaths: links.enabled
+      ? Object.fromEntries(everywhere.map((entry) => [entry.countryId, entry.path]))
+      : undefined,
     canonicalUrl: row.canonicalUrl || product.canonicalUrl,
     noIndex: row.noIndex || product.noIndex,
     ogImageUrl: row.ogImage?.url ?? product.ogImage?.url ?? product.image?.url ?? null,
@@ -52,15 +65,22 @@ export async function productMetadata(
 export async function ProductSurface({
   country,
   slug,
+  path,
 }: {
   country: CountryContext;
   slug: string;
+  /** The registered public path, when the URL registry resolved this request. */
+  path?: string;
 }) {
-  const [product, site, settings] = await Promise.all([
+  const [product, site, settings, links] = await Promise.all([
     getPublicProduct(country, slug),
     getWebsiteSettings(),
     getProductSettings(),
+    loadLinks(),
   ]);
+  // Resolved through the registry: redirects were already checked, and a
+  // route whose content is not public here is simply not found.
+  if (!product && path) notFound();
   /*
    * A product this market does not sell — renamed, retired, or never offered
    * here — follows a redirect if one was written for its address. A renamed
@@ -135,7 +155,7 @@ export async function ProductSurface({
           productSchema({
             name: product.name,
             description: product.shortDescription,
-            url: absoluteCountryUrl(country, `products/${product.slug}`),
+            url: absoluteUrl(path ?? links.product(country, product.slug)),
             imageUrl: product.imageUrl,
             price: product.monthlyPrice,
             currency: product.currency,
@@ -144,8 +164,8 @@ export async function ProductSurface({
           }),
           countryBreadcrumbSchema(country, [
             { name: 'Home', path: '' },
-            { name: 'Plans', path: 'pricing' },
-            { name: product.name, path: `products/${product.slug}` },
+            { name: 'Plans', path: links.page(country, 'pricing') },
+            { name: product.name, path: path ?? links.product(country, product.slug) },
           ]),
         ]}
       />

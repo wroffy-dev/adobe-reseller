@@ -6,6 +6,8 @@ import { publishedPostWhere } from '@/lib/services/blog';
 import { listActiveCountries } from './registry';
 import { countryPath, contentSlug } from './routing';
 import type { CountryContext } from './types';
+import { loadLinks } from '@/lib/urls/links';
+import { pathKey } from '@/lib/urls/paths';
 
 /**
  * Where the market switcher should send a visitor.
@@ -118,6 +120,64 @@ async function countriesWithHome(): Promise<Set<string>> {
   return new Set(rows.map((row) => row.countryId));
 }
 
+/**
+ * The same content in every market, by identity, from the URL registry.
+ *
+ * Returns market id → that market's own address for it, or null when the
+ * registry is off or the current address is not a registered route (the
+ * classic slug-based matching below then applies). A product pairs with the
+ * same product; a page with the page of the same slug; the root-only blog
+ * with itself.
+ */
+async function registryEquivalents(current: CountryContext, path: string): Promise<Map<string, string> | null> {
+  const links = await loadLinks();
+  if (!links.enabled) return null;
+  const route = await prisma.urlRoute.findUnique({
+    where: { pathKey: pathKey(countryPath(current, path)) },
+    select: { contentType: true, contentId: true, countryId: true, path: true },
+  });
+  if (!route || route.countryId !== current.id) return null;
+
+  const out = new Map<string, string>();
+  if (route.contentType === 'PRODUCT') {
+    const live = await prisma.productCountry.findMany({
+      where: {
+        productId: route.contentId,
+        deletedAt: null,
+        status: 'PUBLISHED',
+        OR: [{ publishedAt: null }, { publishedAt: { lte: new Date() } }],
+        product: { deletedAt: null },
+      },
+      select: { countryId: true },
+    });
+    const liveIds = new Set(live.map((row) => row.countryId));
+    for (const entry of links.everywhere('PRODUCT', route.contentId)) {
+      if (liveIds.has(entry.countryId)) out.set(entry.countryId, entry.path);
+    }
+    return out;
+  }
+
+  if (route.contentType === 'BLOG_POST' || route.contentType === 'BLOG_CATEGORY' || route.contentType === 'BLOG_TAG') {
+    // Root-only: the same address serves every market.
+    const markets = await listActiveCountries();
+    for (const market of markets) out.set(market.id, route.path);
+    return out;
+  }
+
+  // Pages: the page with the same slug in each market, at its own address.
+  const page = await prisma.page.findUnique({ where: { id: route.contentId }, select: { slug: true } });
+  if (!page) return out;
+  const twins = await prisma.page.findMany({
+    where: { ...publishedPageWhere(), slug: page.slug },
+    select: { id: true, countryId: true },
+  });
+  for (const twin of twins) {
+    const own = links.pageById(twin.id, twin.countryId);
+    if (own) out.set(twin.countryId, own);
+  }
+  return out;
+}
+
 export const resolveMarketOptions = cache(
   async (current: CountryContext, path: string): Promise<MarketOption[]> => {
     const [countries, surface] = await Promise.all([
@@ -126,10 +186,11 @@ export const resolveMarketOptions = cache(
     ]);
 
     if (countries.length < 2) return [];
-    const [equivalents, withHome] = await Promise.all([
-      countriesWithEquivalent(surface),
+    const [registry, withHome] = await Promise.all([
+      registryEquivalents(current, path),
       countriesWithHome(),
     ]);
+    const equivalents = registry ? new Set(registry.keys()) : await countriesWithEquivalent(surface);
 
     /*
      * A market is offered only when the visitor has somewhere to land: this
@@ -152,6 +213,12 @@ export const resolveMarketOptions = cache(
 
       if (surface.kind === 'home') {
         isEquivalent = true;
+      } else if (registry) {
+        const own = registry.get(country.id);
+        if (own) {
+          href = own;
+          isEquivalent = true;
+        }
       } else if (surface.kind === 'shared') {
         href = countryPath(country, surface.path);
         isEquivalent = true;

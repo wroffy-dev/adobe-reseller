@@ -1,6 +1,7 @@
 import 'server-only';
 import { prisma } from '@/lib/db/prisma';
 import { countryPath } from '@/lib/country/routing';
+import { loadLinks } from '@/lib/urls/links';
 import { publishedPageWhere } from './pages';
 import type { CountryContext } from '@/lib/country/types';
 import { blockDefaults } from '@/lib/cms/blocks';
@@ -43,11 +44,28 @@ export async function ensureTaxonomyPage(
 ): Promise<TaxonomyPageResult> {
   const slug = taxonomyPageSlug(seed.kind, seed.slug);
 
+  // The page is found by the taxonomy's identity first, so a page whose URL
+  // was changed — or a category that was renamed — is still recognised.
+  const linked = await prisma.page.findUnique({
+    where: {
+      countryId_taxonomyKind_taxonomyId: { countryId, taxonomyKind: seed.kind, taxonomyId: seed.id },
+    },
+    select: { id: true, slug: true },
+  });
+  if (linked) return { created: false, pageId: linked.id, slug: linked.slug };
+
   const existing = await prisma.page.findUnique({
     where: { countryId_slug: { countryId, slug } },
-    select: { id: true, deletedAt: true },
+    select: { id: true, deletedAt: true, taxonomyId: true },
   });
   if (existing) {
+    // A page generated before pages were tied to their taxonomy: tie it now.
+    if (!existing.taxonomyId) {
+      await prisma.page.update({
+        where: { id: existing.id },
+        data: { taxonomyKind: seed.kind, taxonomyId: seed.id },
+      });
+    }
     return { created: false, pageId: existing.id, slug };
   }
 
@@ -56,6 +74,8 @@ export async function ensureTaxonomyPage(
       countryId,
       title: seed.name,
       slug,
+      taxonomyKind: seed.kind,
+      taxonomyId: seed.id,
       status: 'PUBLISHED',
       publishedAt: new Date(),
       seoTitle: seed.name,
@@ -82,55 +102,85 @@ export async function ensureTaxonomyPage(
   return { created: true, pageId: page.id, slug };
 }
 
-/** Whether each of these taxonomy entries already has a page in this market. */
+/**
+ * Which of these taxonomy entries already has a page in this market, by the
+ * taxonomy's id — returns taxonomy id → page id.
+ */
 export async function taxonomyPageMap(
   kind: TaxonomyKind,
-  slugs: string[],
+  entries: Array<{ id: string; slug: string }>,
   countryId: string,
 ): Promise<Map<string, string>> {
-  if (slugs.length === 0) return new Map();
+  if (entries.length === 0) return new Map();
 
   const pages = await prisma.page.findMany({
     where: {
       countryId,
       deletedAt: null,
-      slug: { in: slugs.map((slug) => taxonomyPageSlug(kind, slug)) },
+      OR: [
+        { taxonomyKind: kind, taxonomyId: { in: entries.map((entry) => entry.id) } },
+        // Pages generated before the id link existed, until they are tied.
+        { taxonomyId: null, slug: { in: entries.map((entry) => taxonomyPageSlug(kind, entry.slug)) } },
+      ],
     },
-    select: { id: true, slug: true },
+    select: { id: true, slug: true, taxonomyId: true },
   });
 
-  return new Map(pages.map((page) => [page.slug, page.id]));
+  const out = new Map<string, string>();
+  for (const entry of entries) {
+    const page =
+      pages.find((candidate) => candidate.taxonomyId === entry.id) ??
+      pages.find((candidate) => !candidate.taxonomyId && candidate.slug === taxonomyPageSlug(kind, entry.slug));
+    if (page) out.set(entry.id, page.id);
+  }
+  return out;
 }
 
 /**
  * Where a product's category and brand actually link to, in this market.
  *
- * Only a page that is published here produces a link. A category whose page
- * was never generated, or was unpublished or deleted, renders as plain text
- * rather than as a link to a 404 — the name is still worth showing, the dead
- * link is not.
+ * Found by the taxonomy's identity, not by assuming the page still sits at
+ * /categories/<slug>, and linked at whatever address the URL registry gives
+ * it. Only a page that is published here produces a link; otherwise the name
+ * renders as plain text rather than as a link to a 404.
  */
 export async function taxonomyHrefs(
   country: Pick<CountryContext, 'id' | 'slug'>,
-  taxonomy: { categorySlug?: string | null; brandSlug?: string | null },
+  taxonomy: {
+    categoryId?: string | null;
+    categorySlug?: string | null;
+    brandId?: string | null;
+    brandSlug?: string | null;
+  },
 ): Promise<{ categoryHref: string | null; brandHref: string | null }> {
-  const wanted = new Map<string, 'category' | 'brand'>();
-  if (taxonomy.categorySlug) {
-    wanted.set(taxonomyPageSlug('category', taxonomy.categorySlug), 'category');
-  }
-  if (taxonomy.brandSlug) {
-    wanted.set(taxonomyPageSlug('brand', taxonomy.brandSlug), 'brand');
-  }
-  if (wanted.size === 0) return { categoryHref: null, brandHref: null };
+  const wanted: Array<{ kind: 'category' | 'brand'; id: string | null; slug: string }> = [];
+  if (taxonomy.categorySlug) wanted.push({ kind: 'category', id: taxonomy.categoryId ?? null, slug: taxonomy.categorySlug });
+  if (taxonomy.brandSlug) wanted.push({ kind: 'brand', id: taxonomy.brandId ?? null, slug: taxonomy.brandSlug });
+  if (wanted.length === 0) return { categoryHref: null, brandHref: null };
 
-  const live = await prisma.page.findMany({
-    where: { ...publishedPageWhere(), countryId: country.id, slug: { in: [...wanted.keys()] } },
-    select: { slug: true },
-  });
+  const [live, links] = await Promise.all([
+    prisma.page.findMany({
+      where: {
+        ...publishedPageWhere(),
+        countryId: country.id,
+        OR: wanted.flatMap((entry) => [
+          ...(entry.id ? [{ taxonomyKind: entry.kind, taxonomyId: entry.id }] : []),
+          { taxonomyId: null, slug: taxonomyPageSlug(entry.kind, entry.slug) },
+        ]),
+      },
+      select: { id: true, slug: true, taxonomyKind: true, taxonomyId: true },
+    }),
+    loadLinks(),
+  ]);
 
   const href = (kind: 'category' | 'brand') => {
-    const match = live.find((page) => wanted.get(page.slug) === kind);
-    return match ? countryPath(country, match.slug) : null;
+    const entry = wanted.find((candidate) => candidate.kind === kind);
+    if (!entry) return null;
+    const match =
+      live.find((page) => entry.id && page.taxonomyKind === kind && page.taxonomyId === entry.id) ??
+      live.find((page) => !page.taxonomyId && page.slug === taxonomyPageSlug(kind, entry.slug));
+    if (!match) return null;
+    return links.pageById(match.id, country.id) ?? countryPath(country, match.slug);
   };
 
   return { categoryHref: href('category'), brandHref: href('brand') };

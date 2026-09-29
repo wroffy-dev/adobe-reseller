@@ -5,13 +5,14 @@ import { buildTableOfContents } from '@/lib/cms/blog-toc';
 import { parsePostOptions, resolveToggle, POST_TOGGLES } from '@/lib/cms/blog-settings';
 import type { BlogRenderContext } from '@/lib/cms/blog-render';
 import { sanitizeHtml } from '@/lib/utils/sanitize';
-import { absoluteCountryUrl } from '@/lib/seo/metadata';
+import { absoluteUrl } from '@/lib/seo/metadata';
 import { localiseHtml } from '@/lib/country/routing';
 import type { CountryContext } from '@/lib/country/types';
 import { SectionList, type RenderableSection } from '@/components/cms/section-renderer';
 import { BlogSidebar } from '@/components/cms/blog-sidebar';
 import { BlogRoot } from './blog-root';
 import { cn } from '@/lib/utils/cn';
+import { links } from '@/lib/urls/links';
 
 /**
  * The single article page.
@@ -78,7 +79,7 @@ export async function BlogArticle({
       post,
       html,
       toc: items,
-      shareUrl: absoluteCountryUrl(country, `blog/${post.slug}`),
+      shareUrl: absoluteUrl(links().post(post.slug)),
       visible,
       forms: {
         cta: options.ctaFormSlug,
