@@ -14,6 +14,7 @@ import { SettingsSection, SettingsDivider } from '@/components/admin/settings-se
 import { useToast } from '@/components/ui/toast';
 import { Spinner } from '@/components/ui/icons';
 import { SUPPORTED_CURRENCIES } from '@/lib/utils/money';
+import { PrimaryKeywordFields } from '@/components/admin/seo/primary-keyword-fields';
 
 /**
  * A product's configuration per market.
@@ -53,6 +54,7 @@ export type ProductCountryValues = {
   seoDescription: string;
   canonicalUrl: string;
   noIndex: boolean;
+  primaryKeywords: string[];
 };
 
 export function ProductCountryPricing({
@@ -113,6 +115,7 @@ export function ProductCountryPricing({
     data.set('seoDescription', row.seoDescription);
     data.set('canonicalUrl', row.canonicalUrl);
     data.set('noIndex', String(row.noIndex));
+    data.set('primaryKeywords', JSON.stringify(row.primaryKeywords));
 
     const result = await saveProductCountry(data);
     setPending(false);
@@ -370,6 +373,13 @@ export function ProductCountryPricing({
               onChange={(e) => set({ seoDescription: e.target.value })}
             />
           </Field>
+          <PrimaryKeywordFields
+            idPrefix={`pc-kw-${active.countryId}`}
+            values={active.primaryKeywords}
+            disabled={!canEdit}
+            onChange={(next) => set({ primaryKeywords: next })}
+            hint={`Phrases this product should rank for in ${active.countryName}. Leave empty to use the product's own.`}
+          />
           <Switch
             checked={active.noIndex}
             onChange={(next) => set({ noIndex: next })}

@@ -57,6 +57,8 @@ export async function productMetadata(
       : undefined,
     canonicalUrl: row.canonicalUrl || product.canonicalUrl,
     noIndex: row.noIndex || product.noIndex,
+    // The market's own target phrases, else the product's.
+    keywords: row.primaryKeywords.length ? row.primaryKeywords : product.primaryKeywords,
     ogImageUrl: row.ogImage?.url ?? product.ogImage?.url ?? product.image?.url ?? null,
     type: 'product',
   });

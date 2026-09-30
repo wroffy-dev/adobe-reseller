@@ -196,6 +196,39 @@ export function articleSchema(input: {
   };
 }
 
+/**
+ * A local service: what is offered, by whom, in which city.
+ *
+ * Deliberately a Service with the organisation as its provider rather than a
+ * second Organization or a LocalBusiness: the business is not located in every
+ * city it serves, and claiming a local address it does not have would be
+ * invalid structured data.
+ */
+export function cityServiceSchema(input: {
+  name: string;
+  description: string | null;
+  url: string;
+  provider: { type: string; name: string; url: string };
+  city: { name: string; region: string | null };
+  country: CountryContext;
+}): Json {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Service',
+    name: input.name,
+    ...(input.description ? { description: input.description } : {}),
+    url: input.url,
+    provider: { '@type': input.provider.type, name: input.provider.name, url: input.provider.url },
+    areaServed: {
+      '@type': 'City',
+      name: input.city.name,
+      containedInPlace: input.city.region
+        ? { '@type': 'AdministrativeArea', name: input.city.region, containedInPlace: { '@type': 'Country', name: input.country.name } }
+        : { '@type': 'Country', name: input.country.name },
+    },
+  };
+}
+
 export function faqSchema(items: Array<{ question: string; answer: string }>): Json | null {
   const valid = items.filter((i) => i.question.trim() && i.answer.trim());
   if (valid.length === 0) return null;

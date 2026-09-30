@@ -8,6 +8,42 @@ This project uses [semantic versioning](https://semver.org): MAJOR.MINOR.PATCH.
 
 ---
 
+## [1.4.0] — 2026-09-30
+
+### Added
+
+- **Cities** (Website → Cities). A city belongs to a market and gets a landing
+  page at `/<slug>` in that market (`/delhi`, `/ae/dubai`) — an ordinary CMS
+  page built in the page builder, addressed by the URL registry and listed in
+  the sitemap. Region is optional. Suggested title, H1, description and three
+  keywords are generated from the city name and stay fully editable; a template
+  page can be copied once with `{{city}}` filled in. Pages are independent after
+  creation.
+- **City product landing pages** (`/delhi/adobe-acrobat-pro`) for products the
+  market sells, one per city and product. Prices are read live from
+  Product/ProductCountry; nothing is copied.
+- **Primary keywords** — up to three on pages, products and each product's
+  market, emitted as meta keywords.
+- **SEO Intelligence** (Content & SEO → SEO Intelligence): SEO, AEO, GEO and
+  overall scores (50/25/25) per page, product, city page, blog post and market,
+  with local SEO checks and doorway-page warnings for city pages. Every point
+  lost is explained. Scores are internal heuristics, stored in `SeoAnalysis`,
+  refreshed on save and by **Recalculate all**. Editors show a compact
+  SEO · AEO · GEO card.
+- City pages emit `Home → City (→ Product)` breadcrumbs and a `Service` schema
+  with the city as `areaServed`.
+
+### Changed
+
+- Changing a city's slug moves its pages with permanent redirects through the
+  URL registry; renaming a city's landing page moves the city.
+
+### Migration
+
+- `20261001100000_cities_seo_intelligence` — `City`, `CityProductPage`,
+  `SeoAnalysis`, `primaryKeywords` on Page/Product/ProductCountry, and the
+  `cities.view`/`cities.manage` permissions. Additive only.
+
 ## [1.3.0] — 2026-09-30
 
 ### Added

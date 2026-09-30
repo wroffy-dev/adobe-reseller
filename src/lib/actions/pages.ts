@@ -18,6 +18,8 @@ import { getCountryById } from '@/lib/country/registry';
 import { revalidateCountryPage } from '@/lib/country/revalidate';
 import type { CountryContext } from '@/lib/country/types';
 import { syncContentRoutes, checkSlugAvailability, isAddressTaken, actorOf } from '@/lib/urls/registry';
+import { followCityPageRename } from '@/lib/services/cities';
+import { queueSeoAnalysis } from '@/lib/seo-intelligence/queue';
 
 /** Revalidates the public surfaces a page change can affect, in its market. */
 async function revalidatePage(countryId: string, slug: string) {
@@ -65,6 +67,7 @@ export async function createPage(formData: FormData): Promise<ActionResult<{ id:
       twitterTitle: formData.get('twitterTitle'),
       twitterDescription: formData.get('twitterDescription'),
       twitterImageId: formData.get('twitterImageId'),
+      primaryKeywords: formData.getAll('primaryKeywords').map(String),
     });
 
     if (parsed.status === 'PUBLISHED') await authorize('pages.publish');
@@ -101,6 +104,7 @@ export async function createPage(formData: FormData): Promise<ActionResult<{ id:
           countryId: country.id,
           slug,
           title: sanitizeText(parsed.title),
+          primaryKeywords: parsed.primaryKeywords.map((k) => sanitizeText(k)),
           publishedAt:
             parsed.status === 'PUBLISHED' ? (parsed.publishedAt ?? new Date()) : parsed.publishedAt,
           createdById: user.id,
@@ -121,6 +125,7 @@ export async function createPage(formData: FormData): Promise<ActionResult<{ id:
     revalidatePath('/admin/pages');
     await revalidatePage(page.countryId, slug);
     await syncContentRoutes({ kind: 'page', ids: [page.id] }, actorOf(user), 'created');
+    queueSeoAnalysis([{ kind: 'page', id: page.id }]);
     return success({ id: page.id }, 'Page created.');
   } catch (error) {
     return toActionError(error);
@@ -155,6 +160,7 @@ export async function updatePage(pageId: string, formData: FormData): Promise<Ac
       twitterTitle: formData.get('twitterTitle'),
       twitterDescription: formData.get('twitterDescription'),
       twitterImageId: formData.get('twitterImageId'),
+      primaryKeywords: formData.getAll('primaryKeywords').map(String),
     });
 
     if (parsed.status === 'PUBLISHED' && before.status !== 'PUBLISHED') {
@@ -188,6 +194,8 @@ export async function updatePage(pageId: string, formData: FormData): Promise<Ac
           ...parsed,
           slug,
           title: sanitizeText(parsed.title),
+          // A caller that does not send the keyword fields leaves them alone.
+          primaryKeywords: formData.has('primaryKeywords') ? parsed.primaryKeywords.map((k) => sanitizeText(k)) : before.primaryKeywords,
           publishedAt:
             parsed.status === 'PUBLISHED'
               ? (parsed.publishedAt ?? before.publishedAt ?? new Date())
@@ -211,7 +219,10 @@ export async function updatePage(pageId: string, formData: FormData): Promise<Ac
     revalidatePath(`/admin/pages/${pageId}`);
     await revalidatePage(before.countryId, before.slug);
     if (slug !== before.slug) await revalidatePage(before.countryId, slug);
-    await syncContentRoutes({ kind: 'page', ids: [pageId] }, actorOf(user), 'renamed');
+    // A city's landing page takes its city, and the pages under it, along.
+    const followers = slug !== before.slug ? await followCityPageRename(pageId, before.countryId, before.slug, slug) : [];
+    await syncContentRoutes({ kind: 'page', ids: [pageId, ...followers] }, actorOf(user), 'renamed');
+    queueSeoAnalysis([pageId, ...followers].map((id) => ({ kind: 'page' as const, id })));
     return success(undefined, 'Page saved.');
   } catch (error) {
     return toActionError(error);
@@ -251,6 +262,7 @@ export async function setPageStatus(
     revalidatePath('/admin/pages');
     await revalidatePage(page.countryId, page.slug);
     await syncContentRoutes({ kind: 'page', ids: [pageId] }, actorOf(user), 'renamed');
+    queueSeoAnalysis([{ kind: 'page', id: pageId }]);
     return success(undefined, `Page ${status.toLowerCase()}.`);
   } catch (error) {
     return toActionError(error);
@@ -294,6 +306,7 @@ export async function duplicatePage(pageId: string): Promise<ActionResult<{ id: 
         ogTitle: source.ogTitle,
         ogDescription: source.ogDescription,
         ogImageId: source.ogImageId,
+        primaryKeywords: source.primaryKeywords,
         createdById: user.id,
         updatedById: user.id,
         sections: { create: sectionCopies(source.sections) },
@@ -387,6 +400,7 @@ export async function duplicatePageToCountry(
       twitterTitle: source.twitterTitle,
       twitterDescription: source.twitterDescription,
       twitterImageId: source.twitterImageId,
+      primaryKeywords: source.primaryKeywords,
       updatedById: user.id,
     };
 
@@ -467,6 +481,7 @@ export async function deletePage(pageId: string): Promise<ActionResult> {
     revalidatePath('/admin/pages');
     await revalidatePage(page.countryId, page.slug);
     await syncContentRoutes({ kind: 'page', ids: [pageId] }, actorOf(user), 'deleted');
+    queueSeoAnalysis([{ kind: 'page', id: pageId }]);
     return success(undefined, 'Page deleted.');
   } catch (error) {
     return toActionError(error);
@@ -519,6 +534,8 @@ export async function addSection(
     });
 
     revalidatePath(`/admin/pages/${pageId}`);
+
+    queueSeoAnalysis([{ kind: 'page', id: pageId }]);
     await revalidatePage(page.countryId, page.slug);
     return success({ id: section.id }, `${definition.label} added.`);
   } catch (error) {
@@ -579,6 +596,8 @@ export async function updateSection(
     await prisma.page.update({ where: { id: section.page.id }, data: { updatedById: user.id } });
 
     revalidatePath(`/admin/pages/${section.page.id}`);
+
+    queueSeoAnalysis([{ kind: 'page', id: section.page.id }]);
     await revalidatePage(section.page.countryId, section.page.slug);
     return success(undefined, 'Section saved.');
   } catch (error) {
@@ -613,6 +632,7 @@ export async function duplicateSection(sectionId: string): Promise<ActionResult<
 
     await normaliseOrder(source.pageId);
     revalidatePath(`/admin/pages/${source.pageId}`);
+    queueSeoAnalysis([{ kind: 'page', id: source.pageId }]);
     await revalidatePage(source.page.countryId, source.page.slug);
     return success({ id: copy.id }, 'Section duplicated.');
   } catch (error) {
@@ -631,6 +651,7 @@ export async function deleteSection(sectionId: string): Promise<ActionResult> {
 
     await prisma.pageSection.delete({ where: { id: sectionId } });
     revalidatePath(`/admin/pages/${section.page.id}`);
+    queueSeoAnalysis([{ kind: 'page', id: section.page.id }]);
     await revalidatePage(section.page.countryId, section.page.slug);
     return success(undefined, 'Section removed.');
   } catch (error) {
@@ -661,6 +682,8 @@ export async function reorderSections(input: unknown): Promise<ActionResult> {
     );
 
     revalidatePath(`/admin/pages/${pageId}`);
+
+    queueSeoAnalysis([{ kind: 'page', id: pageId }]);
     await revalidatePage(page.countryId, page.slug);
     return success(undefined, 'Order saved.');
   } catch (error) {
@@ -699,6 +722,8 @@ export async function toggleSectionVisibility(sectionId: string): Promise<Action
     });
 
     revalidatePath(`/admin/pages/${section.page.id}`);
+
+    queueSeoAnalysis([{ kind: 'page', id: section.page.id }]);
     await revalidatePage(section.page.countryId, section.page.slug);
     return success(undefined, section.isVisible ? 'Section hidden.' : 'Section shown.');
   } catch (error) {
@@ -761,6 +786,7 @@ export async function bulkPageAction(input: unknown): Promise<ActionResult> {
 
     const skipped = pages.length - targets.length;
     await syncContentRoutes({ kind: 'page' }, actorOf(user), 'bulk');
+    queueSeoAnalysis(targets.map((page) => ({ kind: 'page' as const, id: page.id })));
     return success(
       undefined,
       `${targets.length} page(s) updated.${skipped ? ` ${skipped} skipped (homepage).` : ''}`,

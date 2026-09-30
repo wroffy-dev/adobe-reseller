@@ -55,6 +55,9 @@ export const PERMISSIONS = {
   'forms.edit': { group: 'forms', label: 'Edit forms' },
   'forms.delete': { group: 'forms', label: 'Delete forms' },
 
+  'cities.view': { group: 'cities', label: 'View cities' },
+  'cities.manage': { group: 'cities', label: 'Create and edit cities and their landing pages' },
+
   'emails.view': { group: 'emails', label: 'View custom emails' },
   'emails.manage': { group: 'emails', label: 'Create, edit and send custom emails' },
 
@@ -92,6 +95,7 @@ export const PERMISSION_GROUP_LABELS: Record<string, string> = {
   customers: 'Customers',
   blog: 'Blog',
   forms: 'Forms',
+  cities: 'Cities',
   emails: 'Custom emails',
   media: 'Media',
   seo: 'SEO',
@@ -172,6 +176,8 @@ export const SYSTEM_ROLES: Array<{
       'pages.edit',
       'pages.delete',
       'pages.publish',
+      'cities.view',
+      'cities.manage',
       'blog.view',
       'blog.create',
       'blog.edit',

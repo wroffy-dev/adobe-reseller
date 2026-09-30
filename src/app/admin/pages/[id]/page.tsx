@@ -17,6 +17,9 @@ import type { FieldValues } from '@/components/cms/field-renderer';
 import { getCountryById, getDefaultCountry, listActiveCountries } from '@/lib/country/registry';
 import { countryPath } from '@/lib/country/routing';
 import { parseBlockContent } from '@/lib/cms/blocks';
+import { SeoScoreCard } from '@/components/admin/seo-intelligence/seo-score-card';
+import { analysesForEntity } from '@/lib/services/seo-intelligence';
+import { cityOfPage } from '@/lib/services/cities';
 
 export const dynamic = 'force-dynamic';
 
@@ -52,10 +55,15 @@ export default async function EditPage({ params }: { params: Promise<{ id: strin
 
   // The market the page belongs to, named in the header so an editor can never
   // be in doubt about which storefront they are changing.
-  const [country, countries] = await Promise.all([
+  const [country, countries, analyses, city] = await Promise.all([
     getCountryById(page.countryId).then(async (row) => row ?? (await getDefaultCountry())),
     listActiveCountries(),
+    analysesForEntity(page.id, ['PAGE', 'CITY_PAGE', 'CITY_PRODUCT_PAGE']),
+    cityOfPage(page.id),
   ]);
+  // Stale when the page or any section changed after the last analysis.
+  const changedAt = Math.max(page.updatedAt.getTime(), ...page.sections.map((s) => s.updatedAt.getTime()));
+  const stale = analyses.length === 0 || analyses.some((a) => new Date(a.analyzedAt).getTime() < changedAt);
 
   const canEdit = userCan(user, 'pages.edit');
 
@@ -80,6 +88,7 @@ export default async function EditPage({ params }: { params: Promise<{ id: strin
     twitterTitle: page.twitterTitle ?? '',
     twitterDescription: page.twitterDescription ?? '',
     twitterImageId: page.twitterImageId,
+    primaryKeywords: [0, 1, 2].map((i) => page.primaryKeywords[i] ?? ''),
   };
 
   const sections: BuilderSection[] = page.sections.map((section) => ({
@@ -106,8 +115,8 @@ export default async function EditPage({ params }: { params: Promise<{ id: strin
               ? 'Your homepage'
               : publicPath
         }
-        backHref="/admin/pages"
-        backLabel="All pages"
+        backHref={city ? `/admin/cities/${city.city.id}` : '/admin/pages'}
+        backLabel={city ? `${city.city.name} (city)` : 'All pages'}
         status={<ContentStatusBadge status={page.status} />}
         actions={
           <>
@@ -151,6 +160,13 @@ export default async function EditPage({ params }: { params: Promise<{ id: strin
             />
           </>
         }
+      />
+
+      <SeoScoreCard
+        target={{ kind: 'page', id: page.id }}
+        initial={analyses}
+        stale={stale}
+        canRecalculate={canEdit || userCan(user, 'seo.manage')}
       />
 
       <PageEditorTabs

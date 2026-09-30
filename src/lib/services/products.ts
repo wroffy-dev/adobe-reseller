@@ -296,11 +296,13 @@ export const getProductSeo = cache(async (countryId: string, slug: string) => {
       seoDescription: true,
       canonicalUrl: true,
       noIndex: true,
+      primaryKeywords: true,
       ogImage: { select: { url: true } },
       product: {
         select: {
           id: true,
           name: true,
+          primaryKeywords: true,
           seoTitle: true,
           seoDescription: true,
           shortDescription: true,

@@ -17,6 +17,7 @@ import {
 import { materialiseProductSurface } from '@/lib/services/product-cms';
 import { sanitizeText } from '@/lib/utils/sanitize';
 import { success, failure, toActionError, type ActionResult } from '@/lib/utils/result';
+import { queueSeoAnalysis } from '@/lib/seo-intelligence/queue';
 
 /**
  * Product structure and design actions.
@@ -39,6 +40,7 @@ function surfaceKey(surface: ProductSurface) {
 }
 
 async function revalidateProduct(productId: string, slug?: string) {
+  queueSeoAnalysis([{ kind: 'product', id: productId }]);
   revalidatePath(`/admin/products/${productId}/layout`);
   revalidatePath('/admin/products/design');
   if (slug) {

@@ -16,6 +16,8 @@ import { ContentStatusBadge } from '@/components/admin/lead-status-badge';
 import { buttonClasses } from '@/components/ui/button';
 import { decimalToString } from '@/lib/utils/money';
 import type { SpecItem } from '@/components/admin/list-editor';
+import { SeoScoreCard } from '@/components/admin/seo-intelligence/seo-score-card';
+import { analysesForEntity } from '@/lib/services/seo-intelligence';
 
 export const dynamic = 'force-dynamic';
 
@@ -77,6 +79,12 @@ export default async function EditProduct({ params }: { params: Promise<{ id: st
   ]);
   if (!product) notFound();
 
+  const analyses = (await analysesForEntity(product.id, ['PRODUCT'])).filter((a) =>
+    countries.some((country) => country.id === a.countryId),
+  );
+  const changedAt = Math.max(product.updatedAt.getTime(), ...product.countries.map((c) => c.updatedAt.getTime()));
+  const stale = analyses.length === 0 || analyses.some((a) => new Date(a.analyzedAt).getTime() < changedAt);
+
   const initial: ProductFormValues = {
     id: product.id,
     name: product.name,
@@ -115,6 +123,7 @@ export default async function EditProduct({ params }: { params: Promise<{ id: st
     seoDescription: product.seoDescription ?? '',
     canonicalUrl: product.canonicalUrl ?? '',
     noIndex: product.noIndex,
+    primaryKeywords: [0, 1, 2].map((i) => product.primaryKeywords[i] ?? ''),
   };
 
   /*
@@ -152,6 +161,7 @@ export default async function EditProduct({ params }: { params: Promise<{ id: st
       seoDescription: row?.seoDescription ?? '',
       canonicalUrl: row?.canonicalUrl ?? '',
       noIndex: row?.noIndex ?? false,
+      primaryKeywords: [0, 1, 2].map((i) => row?.primaryKeywords[i] ?? ''),
     };
   });
 
@@ -192,6 +202,13 @@ export default async function EditProduct({ params }: { params: Promise<{ id: st
             ) : null}
           </>
         }
+      />
+      <SeoScoreCard
+        target={{ kind: 'product', id: product.id }}
+        initial={analyses}
+        stale={stale}
+        countryNames={Object.fromEntries(countries.map((country) => [country.id, country.name]))}
+        canRecalculate={userCan(user, 'products.edit') || userCan(user, 'seo.manage')}
       />
       <ProductForm
         initial={initial}

@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { formBoolean } from './boolean';
+import { normaliseKeywords } from '@/lib/cities/defaults';
 import { isReservedCountryPrefix } from '@/lib/country/routing';
 
 /**
@@ -164,6 +165,19 @@ export const productCountrySchema = z.object({
   canonicalUrl: optional(500),
   noIndex: formBoolean(false),
   ogImageId: optional(40),
+  /** Up to three target phrases, sent as a JSON array. */
+  primaryKeywords: z
+    .string()
+    .optional()
+    .nullable()
+    .transform((value) => {
+      try {
+        const parsed: unknown = JSON.parse(value || '[]');
+        return normaliseKeywords(Array.isArray(parsed) ? parsed.map(String) : []);
+      } catch {
+        return [];
+      }
+    }),
 });
 
 export type ProductCountryInput = z.infer<typeof productCountrySchema>;

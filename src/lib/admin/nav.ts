@@ -76,6 +76,12 @@ export const ADMIN_NAV: AdminNavModule[] = [
         exact: true,
       },
       {
+        label: 'Cities',
+        href: '/admin/cities',
+        permission: 'cities.view',
+        description: 'Local landing pages for each city a market serves',
+      },
+      {
         label: 'Navigation',
         href: '/admin/navigation',
         permission: 'navigation.manage',
@@ -254,6 +260,12 @@ export const ADMIN_NAV: AdminNavModule[] = [
         href: '/admin/seo',
         permission: 'seo.manage',
         description: 'Titles, social sharing and indexing',
+      },
+      {
+        label: 'SEO Intelligence',
+        href: '/admin/seo-intelligence',
+        permission: 'seo.manage',
+        description: 'SEO, AEO and GEO scores with the reasons behind them',
       },
       {
         label: 'Slug & URL Manager',
