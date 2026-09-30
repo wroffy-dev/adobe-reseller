@@ -8,6 +8,48 @@ This project uses [semantic versioning](https://semver.org): MAJOR.MINOR.PATCH.
 
 ---
 
+## [1.3.0] — 2026-09-30
+
+### Added
+
+- **Custom emails** (Marketing → Custom Emails). Staff with the new
+  `emails.manage` permission write their own emails in the rich-text editor
+  and send them through the site's SMTP — one message per recipient, with
+  `{{name}}` and `{{email}}` filled in (the name from a matching lead or
+  customer). `emails.view` lets someone see them without sending.
+- **Plan & Limits** (Settings → Plan & Limits, super admin only). The super
+  admin sets how many custom emails the plan allows; everyone else sees
+  “Only 5 emails you can create in your plan — 2 used, 3 left” and cannot
+  create more once the limit is reached. The limit is enforced on the server
+  inside a locked transaction, so concurrent saves cannot overshoot it.
+- **Activity emails.** The super admin can be emailed about every action any
+  other admin takes — everything the audit log records. Their own actions are
+  not reported. Sending never delays or breaks the action.
+
+### Changed
+
+- **SMTP settings are super admin only.** Settings → Email (SMTP, notification
+  recipients, templates) and its actions now require the Super Admin role, and
+  the menu hides it from everyone else.
+
+### Migration
+
+- `20260930100000_custom_emails_plan` — adds `PlatformSettings` and
+  `CustomEmail`, and the `emails.view` / `emails.manage` permissions granted to
+  the built-in Admin role. Additive only.
+
+## [1.2.1] — 2026-09-30
+
+### Fixed
+
+- **Marketing tags loaded on admin pages.** GA4, GTM, the Meta pixel and every
+  other tag rendered from the root layout, so they also loaded on `/admin`, the
+  sign-in screen, the 2FA screens and `/preview`, counting staff as traffic and
+  handing tag vendors those addresses. Tags and the consent banner now render
+  from the public layout only, and a small route guard sets GA4's
+  `ga-disable-<id>` flag whenever a client-side navigation lands on a private
+  path, so a tag already loaded on a public page cannot log admin page views.
+
 ## [1.2.0] — 2026-09-29
 
 ### Added

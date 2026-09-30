@@ -1,7 +1,7 @@
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { prisma } from "@/lib/db/prisma";
 import { getPublishedPage } from "@/lib/services/pages";
-import { getWebsiteSettings } from "@/lib/services/settings";
+import { getTrackingSettings, getWebsiteSettings } from "@/lib/services/settings";
 import {
   getNavigations,
   getPrimaryNavigation,
@@ -11,6 +11,8 @@ import { SiteHeader } from "@/components/public/site-header";
 import { SiteFooter } from "@/components/public/site-footer";
 import { PopupHost } from "@/components/public/popup-host";
 import { JsonLd } from "@/components/seo/json-ld";
+import { HeadTracking, BodyTracking } from "@/components/analytics/tracking-scripts";
+import { ConsentBanner } from "@/components/analytics/consent-banner";
 import { organizationSchema, websiteSchema } from "@/lib/seo/structured-data";
 import { getCurrentUser } from "@/lib/auth/guards";
 import { resolveCountryPath } from "@/lib/country/registry";
@@ -45,7 +47,7 @@ export default async function PublicLayout({
   // this adds no extra query for the page route itself.
   const chrome = await resolveChrome(country, path);
 
-  const [site, local, nav, markets, popups] = await Promise.all([
+  const [site, local, nav, markets, popups, tracking, scripts, cookieStore] = await Promise.all([
     getWebsiteSettings(),
     getCountrySettings(country),
     getPrimaryNavigation(country),
@@ -69,7 +71,16 @@ export default async function PublicLayout({
         pageTargets: { select: { page: { select: { slug: true, countryId: true } } } },
       },
     }),
+    // Marketing tags live here, not in the root layout, so they load on the
+    // public site only — never on the admin, sign-in, 2FA or preview screens.
+    getTrackingSettings(),
+    prisma.trackingScript.findMany({ where: { isActive: true } }),
+    cookies(),
   ]);
+
+  const consentGranted =
+    !tracking.consentRequired || cookieStore.get("tracking_consent")?.value === "granted";
+  const consentUndecided = tracking.consentRequired && !cookieStore.get("tracking_consent");
 
   // Maintenance mode hides the public site from visitors — a restore turns it
   // on for the duration so nobody browses a half-restored database. Signed-in
@@ -95,6 +106,13 @@ export default async function PublicLayout({
 
   return (
     <>
+      <HeadTracking settings={tracking} scripts={scripts} consentGranted={consentGranted} />
+      <BodyTracking
+        settings={tracking}
+        scripts={scripts}
+        placement="BODY_START"
+        consentGranted={consentGranted}
+      />
       <a href="#main" className="skip-link">
         Skip to content
       </a>
@@ -167,6 +185,20 @@ export default async function PublicLayout({
         }))}
       />
       <JsonLd data={[organizationSchema(country, local, site), websiteSchema(country, site)]} />
+      {consentUndecided ? (
+        <ConsentBanner
+          message={
+            tracking.consentMessage ||
+            "We use cookies to understand how the site is used and to improve it. You can decline without losing any functionality."
+          }
+        />
+      ) : null}
+      <BodyTracking
+        settings={tracking}
+        scripts={scripts}
+        placement="BODY_END"
+        consentGranted={consentGranted}
+      />
     </>
   );
 }

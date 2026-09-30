@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { prisma } from '@/lib/db/prisma';
-import { requirePermission, userCan } from '@/lib/auth/guards';
+import { requireSuperAdmin } from '@/lib/auth/super-admin';
 import { getEmailSettingsSafe } from '@/lib/services/settings';
 import { AdminPageHeader } from '@/components/admin/page-header';
 import {
@@ -13,7 +13,8 @@ export const metadata: Metadata = { title: 'Email settings' };
 export const dynamic = 'force-dynamic';
 
 export default async function EmailSettingsPage() {
-  const user = await requirePermission('settings.manage');
+  // SMTP is the platform's delivery, set up by the super admin only.
+  await requireSuperAdmin();
 
   // getEmailSettingsSafe omits the stored password entirely.
   const [settings, templates] = await Promise.all([
@@ -55,7 +56,7 @@ export default async function EmailSettingsPage() {
       <EmailSettingsForm
         initial={initial}
         templates={rows}
-        canEdit={userCan(user, 'settings.manage')}
+        canEdit
       />
     </div>
   );

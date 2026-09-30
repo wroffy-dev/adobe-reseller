@@ -2737,9 +2737,9 @@ model UrlRoute {
   /// The content's own slug when this route was last synced — for lookups.
   contentSlug    String
   /// Name and status at the last sync, so listings need no per-row lookups.
-  label          String  @default("")
-  contentStatus  String  @default("DRAFT")
-  isHomepage     Boolean @default(false)
+  label          String         @default("")
+  contentStatus  String         @default("DRAFT")
+  isHomepage     Boolean        @default(false)
   /// The full public path, market prefix included: "/ae/dropbox".
   path           String
   /// `path` normalised for comparison. Unique across all content.
@@ -2851,4 +2851,40 @@ model UrlSettings {
   /// Unresolved collisions found by the last backfill run.
   lastCollisions  Json      @default("[]")
   updatedAt       DateTime  @updatedAt
+}
+
+// ---------------------------------------------------------------------------
+// Plan limits and custom emails
+// ---------------------------------------------------------------------------
+
+/// What this installation's plan allows, and how its owner is kept informed.
+/// One row, id "singleton". Only a super admin can read or change it.
+model PlatformSettings {
+  id                      String   @id @default("singleton")
+  /// How many custom emails may exist. Null means no limit.
+  maxCustomEmails         Int?
+  /// Email the super admin about every action other staff take.
+  activityEmailsEnabled   Boolean  @default(false)
+  /// Comma-separated addresses that receive those emails.
+  activityEmailRecipients String?  @db.Text
+  updatedById             String?
+  updatedAt               DateTime @updatedAt
+}
+
+/// An email written in the admin and sent by hand through the site's SMTP.
+model CustomEmail {
+  id          String    @id @default(cuid())
+  name        String
+  subject     String
+  /// Sanitised HTML. {{name}} and {{email}} are filled per recipient.
+  body        String    @db.Text
+  isActive    Boolean   @default(true)
+  sentCount   Int       @default(0)
+  lastSentAt  DateTime?
+  createdById String?
+  updatedById String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([createdAt])
 }

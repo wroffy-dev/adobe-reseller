@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db/prisma';
 import { hashIp } from '@/lib/utils/crypto';
 import { requestContext } from '@/lib/utils/request';
 import type { SessionUser } from '@/lib/auth/guards';
+import { notifyActivity } from './activity-notifications';
 
 export type AuditInput = {
   actor?: SessionUser | null;
@@ -35,4 +36,8 @@ export async function recordAudit(input: AuditInput): Promise<void> {
   } catch (error) {
     console.error('[audit] failed to record', error);
   }
+
+  // Every recorded action can be emailed to the super admin. Not awaited: a
+  // slow or failing SMTP server must never hold up or break the action.
+  void notifyActivity(input);
 }

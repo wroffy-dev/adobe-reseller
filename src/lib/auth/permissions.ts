@@ -55,6 +55,9 @@ export const PERMISSIONS = {
   'forms.edit': { group: 'forms', label: 'Edit forms' },
   'forms.delete': { group: 'forms', label: 'Delete forms' },
 
+  'emails.view': { group: 'emails', label: 'View custom emails' },
+  'emails.manage': { group: 'emails', label: 'Create, edit and send custom emails' },
+
   'backup.view': { group: 'backup', label: 'View backups' },
   'backup.create': { group: 'backup', label: 'Create backups' },
   'backup.download': { group: 'backup', label: 'Download backups' },
@@ -89,6 +92,7 @@ export const PERMISSION_GROUP_LABELS: Record<string, string> = {
   customers: 'Customers',
   blog: 'Blog',
   forms: 'Forms',
+  emails: 'Custom emails',
   media: 'Media',
   seo: 'SEO',
   marketing: 'Marketing',
