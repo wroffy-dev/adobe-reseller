@@ -35,6 +35,7 @@ information.
 - [Troubleshooting](#troubleshooting)
 - [Countries](docs/MULTI-COUNTRY.md)
 - [Slug & URL Manager](docs/URL-MANAGER.md) — custom URLs, patterns, redirects, URL health
+- [Custom emails & plan limits](docs/CUSTOM-EMAILS.md) — custom emails, plan limit, SMTP, activity emails
 - [Versioning and releases](VERSION_README.md)
 - [Changelog](CHANGELOG.md)
 

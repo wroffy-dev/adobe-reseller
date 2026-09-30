@@ -126,10 +126,14 @@ describe('admin navigation', () => {
     const forEveryone = visibleModules(allowAll).flatMap((group) => group.items);
     const forSuperAdmin = visibleModules(allowAll, true).flatMap((group) => group.items);
 
-    expect(forEveryone.some((item) => item.href === '/seed-files')).toBe(false);
-    expect(forSuperAdmin.some((item) => item.href === '/seed-files')).toBe(true);
-    // And it is the only difference between the two.
-    expect(forSuperAdmin.length).toBe(forEveryone.length + 1);
+    // Seed files, SMTP and the plan's limits are the platform owner's alone.
+    const superAdminOnly = ['/seed-files', '/admin/settings/email', '/admin/settings/plan'];
+    for (const href of superAdminOnly) {
+      expect(forEveryone.some((item) => item.href === href), href).toBe(false);
+      expect(forSuperAdmin.some((item) => item.href === href), href).toBe(true);
+    }
+    // And they are the only difference between the two.
+    expect(forSuperAdmin.length).toBe(forEveryone.length + superAdminOnly.length);
   });
 });
 

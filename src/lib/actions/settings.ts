@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { prisma } from '@/lib/db/prisma';
+import { authorizeSuperAdmin } from '@/lib/auth/super-admin';
 import { authorize } from '@/lib/auth/guards';
 import { recordAudit } from '@/lib/services/audit';
 import { sanitizeText, safeUrl } from '@/lib/utils/sanitize';
@@ -401,7 +402,7 @@ const emailSettingsSchema = z.object({
 
 export async function saveEmailSettings(formData: FormData): Promise<ActionResult> {
   try {
-    const user = await authorize('settings.manage');
+    const user = await authorizeSuperAdmin();
     const raw = Object.fromEntries(formData.entries()) as Record<string, string>;
 
     const input = emailSettingsSchema.parse({
@@ -452,7 +453,7 @@ export async function saveEmailSettings(formData: FormData): Promise<ActionResul
 
 export async function testSmtpConnection(): Promise<ActionResult> {
   try {
-    await authorize('settings.manage');
+    await authorizeSuperAdmin();
     const result = await verifySmtp();
     if (!result.sent) return failure(result.reason ?? 'Could not connect to the SMTP server.');
     return success(undefined, 'Connected to the SMTP server successfully.');
@@ -465,7 +466,7 @@ const testEmailSchema = z.object({ to: z.string().trim().email('Enter a valid em
 
 export async function sendTestEmail(input: unknown): Promise<ActionResult> {
   try {
-    const user = await authorize('settings.manage');
+    const user = await authorizeSuperAdmin();
     const { to } = testEmailSchema.parse(input);
 
     const result = await sendMail({
@@ -491,7 +492,7 @@ const templateSchema = z.object({
 
 export async function saveEmailTemplate(input: unknown): Promise<ActionResult> {
   try {
-    const user = await authorize('settings.manage');
+    const user = await authorizeSuperAdmin();
     const parsed = templateSchema.parse(input);
 
     const existing = await prisma.emailTemplate.findUnique({ where: { key: parsed.key } });

@@ -275,6 +275,12 @@ export const ADMIN_NAV: AdminNavModule[] = [
     icon: 'megaphone',
     items: [
       {
+        label: 'Custom Emails',
+        href: '/admin/emails',
+        permission: 'emails.view',
+        description: 'Write and send your own emails',
+      },
+      {
         label: 'Tracking & Pixels',
         href: '/admin/marketing',
         permission: 'marketing.manage',
@@ -333,6 +339,7 @@ export const ADMIN_NAV: AdminNavModule[] = [
         description: 'Name, contact details and branding',
         notMatches: [
           '/admin/settings/email',
+          '/admin/settings/plan',
           '/admin/settings/design',
           '/admin/settings/countries',
         ],
@@ -348,6 +355,14 @@ export const ADMIN_NAV: AdminNavModule[] = [
         href: '/admin/settings/email',
         permission: 'settings.manage',
         description: 'SMTP and notification templates',
+        superAdminOnly: true,
+      },
+      {
+        label: 'Plan & Limits',
+        href: '/admin/settings/plan',
+        permission: 'settings.manage',
+        description: 'Custom email limit and activity emails',
+        superAdminOnly: true,
       },
       {
         label: 'Staff',

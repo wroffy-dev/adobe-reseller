@@ -1,6 +1,6 @@
 # Versioning
 
-**Current release:** `1.2.1` — released 2026-09-30
+**Current release:** `1.3.0` — released 2026-09-30
 
 Everything about how this application is versioned: where the number lives, how
 Settings reads it, how to move it, and what it is *not*.
