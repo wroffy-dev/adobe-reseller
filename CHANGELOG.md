@@ -8,6 +8,18 @@ This project uses [semantic versioning](https://semver.org): MAJOR.MINOR.PATCH.
 
 ---
 
+## [1.2.1] — 2026-09-30
+
+### Fixed
+
+- **Marketing tags loaded on admin pages.** GA4, GTM, the Meta pixel and every
+  other tag rendered from the root layout, so they also loaded on `/admin`, the
+  sign-in screen, the 2FA screens and `/preview`, counting staff as traffic and
+  handing tag vendors those addresses. Tags and the consent banner now render
+  from the public layout only, and a small route guard sets GA4's
+  `ga-disable-<id>` flag whenever a client-side navigation lands on a private
+  path, so a tag already loaded on a public page cannot log admin page views.
+
 ## [1.2.0] — 2026-09-29
 
 ### Added
