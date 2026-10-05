@@ -30,7 +30,7 @@ export default async function CustomEmailsPage() {
   }));
 
   return (
-    <div className="mx-auto max-w-5xl">
+    <div className="max-w-5xl">
       <AdminPageHeader
         title="Custom emails"
         description="Write your own emails and send them to leads, customers or anyone else — delivered through the site's SMTP."

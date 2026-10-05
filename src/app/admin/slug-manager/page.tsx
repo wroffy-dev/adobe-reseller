@@ -38,7 +38,7 @@ export default async function SlugManagerPage() {
   const markets = countries.filter((country) => !allowed || allowed.includes(country.id));
 
   return (
-    <div className="mx-auto max-w-7xl">
+    <div className="max-w-7xl">
       <AdminPageHeader
         title="Slug & URL Manager"
         description="Every public address on the site — products, pages, articles, categories, tags and landing pages — in one place. Change a URL, set URL patterns, manage redirects and fix what is broken."

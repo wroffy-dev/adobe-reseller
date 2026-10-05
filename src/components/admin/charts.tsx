@@ -37,7 +37,7 @@ export function BarChart({
             className="group relative flex-1 rounded-t bg-brand/20 transition-colors hover:bg-brand/40"
             style={{ height: `${Math.max(2, (point.count / max) * 100)}%` }}
           >
-            <span className="pointer-events-none absolute bottom-full left-1/2 z-tooltip mb-1 hidden -translate-x-1/2 whitespace-nowrap rounded bg-[rgb(var(--brand-secondary))] px-2 py-1 text-[0.6875rem] text-white group-hover:block">
+            <span className="pointer-events-none absolute bottom-full left-1/2 z-tooltip mb-1 hidden -translate-x-1/2 whitespace-nowrap rounded-md bg-[rgb(var(--primary))] px-2 py-1 text-[0.6875rem] text-[rgb(var(--primary-fg))] shadow-md group-hover:block">
               {new Date(point.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
               : {point.count}
             </span>

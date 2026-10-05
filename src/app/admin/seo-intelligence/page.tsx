@@ -125,7 +125,7 @@ export default async function SeoIntelligencePage({
         actions={<RecalculateAllButton />}
       />
 
-      <div className="mb-4 grid grid-cols-2 gap-3 md:grid-cols-4">
+      <div className="mb-4 grid grid-cols-2 gap-3 xl:grid-cols-4">
         <StatCard label="Overall SEO" value={summary.overall} tone={tone(summary.overall)} hint={HEALTH_LABELS[healthOf(summary.overall)]} />
         <StatCard label="SEO score" value={summary.seo} tone={tone(summary.seo)} hint="Search engines" />
         <StatCard label="AEO score" value={summary.aeo} tone={tone(summary.aeo)} hint="Answer engines" />

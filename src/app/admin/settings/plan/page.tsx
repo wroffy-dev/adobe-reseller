@@ -21,7 +21,7 @@ export default async function PlanPage() {
   const smtpReady = email.isEnabled && Boolean(email.host) && Boolean(email.fromEmail);
 
   return (
-    <div className="mx-auto max-w-3xl space-y-4">
+    <div className="max-w-3xl space-y-4">
       <AdminPageHeader
         title="Plan & limits"
         description="What this site's plan allows, and how you are told what the other admins do. Only a super admin sees this page."
