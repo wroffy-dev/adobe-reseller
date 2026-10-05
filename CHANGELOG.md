@@ -8,6 +8,33 @@ This project uses [semantic versioning](https://semver.org): MAJOR.MINOR.PATCH.
 
 ---
 
+## [1.5.0] — 2026-10-05
+
+### Changed
+
+- **Admin redesign — "Liquid Glass".** A floating glass sidebar (section
+  headings, collapse toggle beside the logo, 76px icon rail with tooltips and
+  fly-outs, no footer, a drawer on phones) and a floating glass topbar
+  (breadcrumbs, ⌘K search, Create, theme toggle, View website, profile menu).
+  Near-black primary actions with the brand colour as the accent, calmer
+  type, glass KPI tiles and filter strip, solid tables and forms, and a
+  dashboard with glass panels over an ambient wash. Form and settings screens
+  are left-aligned so the title sits in the same place everywhere.
+- Scoped entirely to the admin (`.admin-ui`); the public website is
+  pixel-identical.
+
+### Added
+
+- **Light / Dark / System themes** for the admin, remembered per browser,
+  applied before first paint (no flash), with System following the OS live.
+- KPI tiles accept a trend chip (arrow and sign, `invertTrend` for metrics
+  where up is bad) and a sparkline.
+
+### Fixed
+
+- Screen-reader labels inside horizontally scrolling admin tables could widen
+  the page on phones.
+
 ## [1.4.0] — 2026-09-30
 
 ### Added

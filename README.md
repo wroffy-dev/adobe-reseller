@@ -36,6 +36,7 @@ information.
 - [Countries](docs/MULTI-COUNTRY.md)
 - [Slug & URL Manager](docs/URL-MANAGER.md) — custom URLs, patterns, redirects, URL health
 - [Custom emails & plan limits](docs/CUSTOM-EMAILS.md) — custom emails, plan limit, SMTP, activity emails
+- [Admin UI](docs/ADMIN-UI.md) — Liquid Glass admin design system, Light/Dark/System themes
 - [Cities & SEO Intelligence](docs/CITIES-AND-SEO-INTELLIGENCE.md) — local landing pages, primary keywords, SEO/AEO/GEO scores
 - [Versioning and releases](VERSION_README.md)
 - [Changelog](CHANGELOG.md)
