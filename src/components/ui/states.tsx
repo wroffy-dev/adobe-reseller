@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { CircleCheck, Info, OctagonAlert, TriangleAlert } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 
 export function Skeleton({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
@@ -36,7 +37,7 @@ export function EmptyState({
   return (
     <div className={cn('flex flex-col items-center justify-center px-6 py-14 text-center', className)}>
       {icon ? (
-        <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-muted/10 text-muted">
+        <div className="ui-empty-icon mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-muted/10 text-muted">
           {icon}
         </div>
       ) : null}
@@ -64,13 +65,19 @@ export function Alert({
     warning: 'border-amber-200 bg-amber-50 text-amber-900',
     danger: 'border-red-200 bg-red-50 text-red-900',
   } as const;
+  const Icon = { info: Info, success: CircleCheck, warning: TriangleAlert, danger: OctagonAlert }[tone];
   return (
     <div
       role={tone === 'danger' ? 'alert' : 'status'}
-      className={cn('rounded-lg border px-4 py-3 text-sm', tones[tone], className)}
+      className={cn('ui-alert rounded-lg border px-4 py-3 text-sm', tones[tone], className)}
     >
-      {title ? <p className="font-semibold">{title}</p> : null}
-      {children ? <div className={cn(title && 'mt-1')}>{children}</div> : null}
+      {/* The tone icon is shown in the admin only (admin-ui.css), so screens
+          outside it render exactly as before. */}
+      <Icon className="ui-alert-icon hidden h-4 w-4 shrink-0" aria-hidden="true" />
+      <div className="ui-alert-body min-w-0">
+        {title ? <p className="font-semibold">{title}</p> : null}
+        {children ? <div className={cn(title && 'mt-1')}>{children}</div> : null}
+      </div>
     </div>
   );
 }

@@ -141,10 +141,10 @@ export function FilterBar({
                 onClick={() => applyPreset(preset)}
                 aria-pressed={isActive}
                 className={cn(
-                  'shrink-0 rounded-lg px-3 py-1.5 text-[0.8125rem] font-medium transition-colors',
+                  'shrink-0 rounded-full px-3.5 py-1.5 text-[0.8125rem] font-medium transition-colors',
                   isActive
-                    ? 'bg-brand/10 text-brand ring-1 ring-inset ring-brand/25'
-                    : 'text-muted hover:bg-muted/[0.07] hover:text-content',
+                    ? 'bg-content text-surface shadow-sm'
+                    : 'text-muted ring-1 ring-inset ring-hairline hover:bg-muted/[0.07] hover:text-content',
                 )}
               >
                 {preset.label}
@@ -154,7 +154,8 @@ export function FilterBar({
         </div>
       ) : null}
 
-      <div className="flex flex-wrap items-center gap-2">
+      {/* One glass strip: search and filters, all the same height and radius. */}
+      <div className="glass-card flex flex-wrap items-center gap-2 rounded-[var(--radius-card-sm,0.875rem)] p-2">
         <div className="relative min-w-0 flex-1 sm:max-w-xs">
           <Search
             className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted"

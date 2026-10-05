@@ -75,7 +75,7 @@ export function Dialog({
   return createPortal(
     <div className="fixed inset-0 z-modal flex items-end justify-center p-0 sm:items-center sm:p-4">
       <div
-        className="absolute inset-0 animate-fade-in bg-[rgb(var(--brand-secondary))]/50 backdrop-blur-[2px]"
+        className="ui-scrim absolute inset-0 animate-fade-in bg-[rgb(var(--brand-secondary))]/50 backdrop-blur-[2px]"
         onClick={onClose}
         aria-hidden="true"
       />
@@ -85,7 +85,7 @@ export function Dialog({
         aria-modal="true"
         aria-label={title}
         className={cn(
-          'relative z-10 flex max-h-[92dvh] w-full animate-slide-up flex-col rounded-t-2xl bg-surface shadow-2xl sm:rounded-2xl',
+          'ui-dialog relative z-10 flex max-h-[92dvh] w-full animate-slide-up flex-col rounded-t-2xl bg-surface shadow-2xl sm:rounded-2xl',
           sizes[size],
         )}
       >

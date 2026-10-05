@@ -1,10 +1,18 @@
 import * as React from 'react';
 import { cn } from '@/lib/utils/cn';
 
-export function Card({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+/**
+ * A solid surface by default. `glass` is for overview screens with colour
+ * behind them (the dashboard's ambient wash); dense work areas stay solid.
+ */
+export function Card({
+  className,
+  glass = false,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement> & { glass?: boolean }) {
   return (
     <div
-      className={cn('rounded-xl border border-hairline bg-surface shadow-sm', className)}
+      className={cn('ui-card rounded-xl border border-hairline bg-surface shadow-sm', glass && 'glass-panel', className)}
       {...props}
     />
   );
@@ -24,7 +32,7 @@ export function CardHeader({
   return (
     <div
       className={cn(
-        'flex flex-col gap-3 border-b border-hairline px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5',
+        'ui-card-header flex flex-col gap-3 border-b border-hairline px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5',
         className,
       )}
     >

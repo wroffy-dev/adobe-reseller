@@ -96,7 +96,7 @@ export function Menu({
           aria-label={label}
           onClick={() => setOpen(false)}
           className={cn(
-            'absolute top-full z-dropdown mt-1.5 animate-slide-up overflow-hidden rounded-xl border border-hairline',
+            'ui-menu absolute top-full z-dropdown mt-1.5 animate-slide-up overflow-hidden rounded-xl border border-hairline',
             'bg-surface p-1.5 shadow-xl',
             width,
             align === 'right' ? 'right-0' : 'left-0',
@@ -127,7 +127,7 @@ export function MenuItem({
   external?: boolean;
 }) {
   const className = cn(
-    'flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm transition-colors',
+    'ui-menu-item flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm transition-colors',
     'focus-visible:outline-none focus-visible:bg-muted/10',
     tone === 'danger' ? 'text-red-600 hover:bg-red-50' : 'text-content hover:bg-muted/[0.08]',
     disabled && 'pointer-events-none opacity-50',
