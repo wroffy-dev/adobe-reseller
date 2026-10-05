@@ -45,6 +45,8 @@ export type AdminNavModule = {
   exact?: boolean;
   permission?: PermissionKey | PermissionKey[];
   items?: AdminNavItem[];
+  /** The sidebar section heading this module sits under. */
+  section?: string;
 };
 
 export const ADMIN_NAV: AdminNavModule[] = [
@@ -58,6 +60,7 @@ export const ADMIN_NAV: AdminNavModule[] = [
   },
   {
     id: 'website',
+    section: 'Website',
     label: 'Website',
     icon: 'layout',
     items: [
@@ -115,6 +118,7 @@ export const ADMIN_NAV: AdminNavModule[] = [
   },
   {
     id: 'products',
+    section: 'Catalogue',
     label: 'Products',
     icon: 'package',
     items: [
@@ -165,6 +169,7 @@ export const ADMIN_NAV: AdminNavModule[] = [
   },
   {
     id: 'crm',
+    section: 'Customers',
     label: 'Leads & CRM',
     icon: 'inbox',
     items: [
@@ -215,6 +220,7 @@ export const ADMIN_NAV: AdminNavModule[] = [
   },
   {
     id: 'content',
+    section: 'Content',
     label: 'Content & SEO',
     icon: 'file',
     items: [
@@ -283,6 +289,7 @@ export const ADMIN_NAV: AdminNavModule[] = [
   },
   {
     id: 'marketing',
+    section: 'Growth',
     label: 'Marketing',
     icon: 'megaphone',
     items: [
@@ -321,6 +328,7 @@ export const ADMIN_NAV: AdminNavModule[] = [
   },
   {
     id: 'reports',
+    section: 'Growth',
     label: 'Reports',
     icon: 'chart',
     items: [
@@ -341,6 +349,7 @@ export const ADMIN_NAV: AdminNavModule[] = [
   },
   {
     id: 'settings',
+    section: 'Admin',
     label: 'Settings',
     icon: 'settings',
     items: [

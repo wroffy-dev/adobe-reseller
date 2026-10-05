@@ -3,7 +3,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { X, ChevronDown, PanelLeftClose, PanelLeftOpen, ExternalLink } from 'lucide-react';
+import { X, ChevronDown, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import {
   visibleModules,
   isItemActive,
@@ -58,10 +58,6 @@ export function AdminSidebar({
   );
 
   const modules = React.useMemo(() => visibleModules(can, isSuperAdmin), [can, isSuperAdmin]);
-
-  // The rail is dark, so the dark-surface logo from Website settings is the
-  // right one here — the same preference the public footer already makes.
-  const brandLogo = logoDarkUrl || logoUrl;
 
   const activeModuleId = React.useMemo(() => {
     for (const group of modules) {
@@ -180,7 +176,7 @@ export function AdminSidebar({
     <>
       {open ? (
         <div
-          className="fixed inset-0 z-backdrop bg-[rgb(var(--admin-header-bg))]/60 backdrop-blur-[1px] lg:hidden"
+          className="fixed inset-0 z-backdrop bg-[rgb(var(--shadow-ink))]/30 backdrop-blur-sm lg:hidden"
           onClick={onClose}
           aria-hidden="true"
         />
@@ -190,48 +186,45 @@ export function AdminSidebar({
         ref={asideRef}
         id="admin-sidebar"
         className={cn(
-          'fixed inset-y-0 left-0 flex flex-col border-r border-admin-nav/10 bg-admin-sidebar',
+          // A floating glass rail: inset 12px from the edges on desktop, an
+          // off-canvas drawer on smaller screens.
+          'glass-rail fixed inset-y-0 left-0 flex flex-col rounded-r-[var(--radius-shell)]',
+          'lg:inset-y-3 lg:left-3 lg:rounded-[var(--radius-shell)]',
           'transition-[transform,width] duration-200 ease-out lg:translate-x-0',
-          collapsed ? 'w-64 lg:w-[4.5rem]' : 'w-64',
+          collapsed ? 'w-64 lg:w-[4.75rem]' : 'w-64',
           open ? 'translate-x-0' : '-translate-x-full',
-          // One element, two roles: an off-canvas drawer on small screens (so
-          // it must clear the backdrop and the top bar) and a docked column on
-          // large ones (where it sits below the top bar).
           'z-drawer lg:z-sidebar',
         )}
         aria-label="Admin navigation"
         aria-modal={open ? true : undefined}
         role={open ? 'dialog' : undefined}
       >
+        {/* Header row: the brand, then the collapse toggle beside it. */}
         <div
           className={cn(
-            'flex h-16 shrink-0 items-center gap-2 border-b border-admin-nav/10 px-4',
-            collapsed && 'lg:justify-center lg:px-2',
+            'flex h-16 shrink-0 items-center gap-2 px-4',
+            collapsed && 'lg:flex-col lg:justify-center lg:gap-1.5 lg:px-2 lg:h-auto lg:py-3',
           )}
         >
           <Link
             href="/admin"
-            className="admin-focus flex min-w-0 items-center gap-2.5 rounded-lg"
+            className="admin-focus flex min-w-0 items-center gap-2.5 rounded-xl"
             aria-label={siteName}
+            title={collapsed ? siteName : undefined}
           >
-            {brandLogo && !collapsed ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={brandLogo}
-                alt={siteName}
-                className="h-7 w-auto max-w-[9rem] object-contain"
-              />
+            {logoUrl && !collapsed ? (
+              <>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={logoUrl} alt={siteName} className="logo-light h-7 w-auto max-w-[9rem] object-contain" />
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={logoDarkUrl || logoUrl} alt="" aria-hidden="true" className="logo-dark h-7 w-auto max-w-[9rem] object-contain" />
+              </>
             ) : (
               <>
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand text-sm font-bold text-white">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-brand text-sm font-bold text-white shadow-sm">
                   {siteName.charAt(0).toUpperCase()}
                 </span>
-                <span
-                  className={cn(
-                    'truncate font-heading text-sm font-bold text-admin-nav',
-                    collapsed && 'lg:hidden',
-                  )}
-                >
+                <span className={cn('truncate text-[0.9375rem] font-semibold tracking-tight text-admin-nav', collapsed && 'lg:hidden')}>
                   {siteName}
                 </span>
               </>
@@ -240,8 +233,28 @@ export function AdminSidebar({
 
           <button
             type="button"
+            onClick={onToggleCollapsed}
+            aria-label={collapsed ? 'Expand navigation' : 'Collapse navigation'}
+            title={collapsed ? 'Expand navigation' : 'Collapse navigation'}
+            aria-expanded={!collapsed}
+            aria-controls="admin-sidebar"
+            className={cn(
+              'admin-focus ml-auto hidden h-8 w-8 shrink-0 items-center justify-center rounded-[10px] text-admin-nav/60',
+              'transition-colors hover:bg-admin-nav/[0.06] hover:text-admin-nav lg:flex',
+              collapsed && 'lg:ml-0',
+            )}
+          >
+            {collapsed ? (
+              <PanelLeftOpen className="h-4 w-4" aria-hidden="true" />
+            ) : (
+              <PanelLeftClose className="h-4 w-4" aria-hidden="true" />
+            )}
+          </button>
+
+          <button
+            type="button"
             onClick={onClose}
-            className="admin-focus ml-auto rounded-lg p-1.5 text-admin-nav/70 transition-colors hover:bg-admin-nav/[0.06] hover:text-admin-nav lg:hidden"
+            className="admin-focus ml-auto rounded-[10px] p-1.5 text-admin-nav/70 transition-colors hover:bg-admin-nav/[0.06] hover:text-admin-nav lg:hidden"
             aria-label="Close navigation"
           >
             <X className="h-4 w-4" />
@@ -250,74 +263,82 @@ export function AdminSidebar({
 
         <nav
           className={cn(
-            'admin-scroll flex-1 overflow-y-auto overflow-x-hidden py-3',
-            collapsed ? 'lg:px-2 px-3' : 'px-3',
+            'admin-scroll flex-1 overflow-y-auto overflow-x-hidden pb-4 pt-1',
+            collapsed ? 'px-3 lg:px-2.5' : 'px-3',
           )}
         >
-          <ul className="space-y-1">
-            {modules.map((group) => (
-              <li key={group.id}>
-                {group.href ? (
-                  <SidebarLink
-                    href={group.href}
-                    label={group.label}
-                    icon={group.icon}
-                    active={isItemActive(group, pathname, search)}
-                    collapsed={collapsed}
-                    onNavigate={onClose}
-                  />
-                ) : (
-                  <SidebarModule
-                    group={group}
-                    expanded={isExpanded(group.id)}
-                    isActiveModule={group.id === activeModuleId}
-                    collapsed={collapsed}
-                    pathname={pathname}
-                    search={search}
-                    onToggle={() => toggleModule(group.id)}
-                    onNavigate={onClose}
-                  />
-                )}
-              </li>
-            ))}
+          <ul className="space-y-0.5">
+            {modules.map((group, index) => {
+              const section = group.section;
+              const startsSection = Boolean(section) && section !== modules[index - 1]?.section;
+              // "Website" above a module called "Website" says nothing twice;
+              // the collapsed rail still gets its divider.
+              const repeatsLabel = Boolean(section) && group.label.toLowerCase().startsWith(section!.toLowerCase());
+              return (
+                <li key={group.id}>
+                  {startsSection ? (
+                    <>
+                      <p
+                        className={cn(
+                          'px-3 pb-1.5 pt-4 text-[0.6875rem] font-semibold uppercase tracking-wider text-admin-nav/45',
+                          collapsed && 'lg:hidden',
+                          repeatsLabel && 'hidden',
+                        )}
+                      >
+                        {section}
+                      </p>
+                      {collapsed ? <hr className="mx-2 my-2 hidden border-admin-nav/10 lg:block" aria-hidden="true" /> : null}
+                      {repeatsLabel && !collapsed ? <div className="h-3" aria-hidden="true" /> : null}
+                    </>
+                  ) : null}
+                  {group.href ? (
+                    <SidebarLink
+                      href={group.href}
+                      label={group.label}
+                      icon={group.icon}
+                      active={isItemActive(group, pathname, search)}
+                      collapsed={collapsed}
+                      onNavigate={onClose}
+                    />
+                  ) : (
+                    <SidebarModule
+                      group={group}
+                      expanded={isExpanded(group.id)}
+                      isActiveModule={group.id === activeModuleId}
+                      collapsed={collapsed}
+                      pathname={pathname}
+                      search={search}
+                      onToggle={() => toggleModule(group.id)}
+                      onNavigate={onClose}
+                    />
+                  )}
+                </li>
+              );
+            })}
           </ul>
         </nav>
-
-        <div className={cn('space-y-1 border-t border-admin-nav/10 p-3', collapsed && 'lg:px-2')}>
-          <SidebarLink
-            href="/"
-            label="View website"
-            icon="globe"
-            collapsed={collapsed}
-            external
-            onNavigate={onClose}
-          />
-          <button
-            type="button"
-            onClick={onToggleCollapsed}
-            aria-label={collapsed ? 'Expand navigation' : 'Collapse navigation'}
-            title={collapsed ? 'Expand navigation' : 'Collapse navigation'}
-            aria-expanded={!collapsed}
-            aria-controls="admin-sidebar"
-            className={cn(
-              'admin-focus hidden w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm',
-              'text-admin-nav/70 transition-colors hover:bg-admin-nav/[0.06] hover:text-admin-nav lg:flex',
-              collapsed && 'lg:justify-center lg:px-0',
-            )}
-          >
-            {collapsed ? (
-              <PanelLeftOpen className="h-4 w-4 shrink-0" aria-hidden="true" />
-            ) : (
-              <>
-                <PanelLeftClose className="h-4 w-4 shrink-0" aria-hidden="true" />
-                <span>Collapse</span>
-              </>
-            )}
-          </button>
-        </div>
       </aside>
     </>
   );
+}
+
+/**
+ * Where a collapsed rail's tooltip or fly-out is painted.
+ *
+ * The nav scrolls, and a scroll container clips on both axes, so anything
+ * positioned inside it is invisible. Painting it `fixed` and measuring the row
+ * against the rail lets it escape the rail's clipping.
+ */
+function useFlyout() {
+  const rowRef = React.useRef<HTMLDivElement>(null);
+  const [position, setPosition] = React.useState<{ top: number; left: number } | null>(null);
+  const place = React.useCallback(() => {
+    const row = rowRef.current?.getBoundingClientRect();
+    const rail = rowRef.current?.closest('aside')?.getBoundingClientRect();
+    if (!row || !rail) return;
+    setPosition({ top: row.top - rail.top, left: rail.right - rail.left });
+  }, []);
+  return { rowRef, position, place };
 }
 
 function SidebarModule({
@@ -340,74 +361,39 @@ function SidebarModule({
   onNavigate: () => void;
 }) {
   const panelId = `nav-group-${group.id}`;
+  const { rowRef, position, place } = useFlyout();
 
-  /**
-   * Where the icon-only fly-out is painted.
-   *
-   * The nav is a vertical scroller, and a scroll container clips on both axes —
-   * so a fly-out positioned `absolute left-full` inside it is invisible, however
-   * high its z-index. Taking it out of flow with `fixed` and measuring the row
-   * is what lets it escape. Offsets are measured against the rail rather than
-   * the viewport so the result is the same whether the containing block is the
-   * transformed <aside> or the viewport itself.
-   */
-  const rowRef = React.useRef<HTMLDivElement>(null);
-  const [flyout, setFlyout] = React.useState<{ top: number; left: number } | null>(null);
-
-  const placeFlyout = React.useCallback(() => {
-    const row = rowRef.current?.getBoundingClientRect();
-    const rail = rowRef.current?.closest('aside')?.getBoundingClientRect();
-    if (!row || !rail) return;
-    setFlyout({ top: row.top - rail.top, left: rail.right - rail.left });
-  }, []);
-
-  // Icon-only mode has no room for a sub-list, so the group becomes a single
-  // button that flies its children out on hover or focus.
+  // The collapsed rail has no room for a sub-list, so the group becomes one
+  // icon that flies its children out on hover or focus.
   if (collapsed) {
     return (
-      <div
-        ref={rowRef}
-        onMouseEnter={placeFlyout}
-        onFocus={placeFlyout}
-        className="group/group relative hidden lg:block"
-      >
+      <div ref={rowRef} onMouseEnter={place} onFocus={place} className="group/group relative hidden lg:block">
         <Link
           href={group.items[0]!.href}
           onClick={onNavigate}
           aria-label={group.label}
           title={group.label}
           className={cn(
-            'admin-focus relative flex h-10 w-full items-center justify-center rounded-lg transition-colors',
+            'admin-focus relative flex h-10 w-full items-center justify-center rounded-xl transition-colors',
             isActiveModule
-              ? 'bg-admin-nav/[0.08] text-admin-nav'
-              : 'text-admin-nav/70 hover:bg-admin-nav/[0.06] hover:text-admin-nav',
+              ? 'bg-admin-nav/[0.07] text-admin-nav'
+              : 'text-admin-nav/60 hover:bg-admin-nav/[0.05] hover:text-admin-nav',
           )}
         >
-          {/* The rail has no room for a label, so the active module is marked
-              by the same brand bar the expanded nav uses. */}
-          {isActiveModule ? (
-            <span
-              aria-hidden="true"
-              className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-brand"
-            />
-          ) : null}
+          {isActiveModule ? <ActiveBar /> : null}
           <NavIcon name={group.icon} className="h-[1.15rem] w-[1.15rem]" />
         </Link>
 
-        {/* The fly-out is navigation, not a popup — it stays on the rail's own
-            surface so it reads as an extension of the sidebar. */}
         <div
-          style={flyout ? { top: flyout.top, left: flyout.left } : undefined}
+          style={position ? { top: position.top, left: position.left } : undefined}
           className={cn(
-            'pointer-events-none fixed z-tooltip ml-2 w-56 origin-left scale-95 opacity-0',
-            'rounded-xl border border-admin-nav/10 bg-admin-sidebar p-1.5 shadow-xl ring-1 ring-black/20 transition',
-            // Nothing to anchor to until the row has been measured.
-            flyout ? 'block' : 'hidden',
+            'glass-menu pointer-events-none fixed z-tooltip ml-2 w-56 origin-left scale-95 p-1.5 opacity-0 transition duration-150 ease-out',
+            position ? 'block' : 'hidden',
             'group-hover/group:pointer-events-auto group-hover/group:scale-100 group-hover/group:opacity-100',
             'group-focus-within/group:pointer-events-auto group-focus-within/group:scale-100 group-focus-within/group:opacity-100',
           )}
         >
-          <p className="px-2.5 py-1.5 text-[0.6875rem] font-semibold uppercase tracking-wider text-admin-nav/55">
+          <p className="px-2.5 py-1.5 text-[0.6875rem] font-semibold uppercase tracking-wider text-admin-nav/50">
             {group.label}
           </p>
           <ul>
@@ -420,10 +406,10 @@ function SidebarModule({
                     onClick={onNavigate}
                     aria-current={active ? 'page' : undefined}
                     className={cn(
-                      'admin-focus block truncate rounded-lg px-2.5 py-2 text-sm transition-colors',
+                      'admin-focus block truncate rounded-[10px] px-2.5 py-2 text-sm transition-colors',
                       active
-                        ? 'bg-admin-nav/[0.08] font-medium text-admin-nav'
-                        : 'text-admin-nav/70 hover:bg-admin-nav/[0.06] hover:text-admin-nav',
+                        ? 'bg-admin-nav/[0.07] font-medium text-admin-nav'
+                        : 'text-admin-nav/70 hover:bg-admin-nav/[0.05] hover:text-admin-nav',
                     )}
                   >
                     {item.label}
@@ -445,25 +431,22 @@ function SidebarModule({
         aria-expanded={expanded}
         aria-controls={panelId}
         className={cn(
-          'admin-focus flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors',
+          'admin-focus flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm transition-colors',
           isActiveModule
             ? 'font-medium text-admin-nav'
-            : 'text-admin-nav/80 hover:bg-admin-nav/[0.06] hover:text-admin-nav',
+            : 'text-admin-nav/75 hover:bg-admin-nav/[0.05] hover:text-admin-nav',
         )}
       >
         <NavIcon
           name={group.icon}
           className={cn(
             'h-[1.15rem] w-[1.15rem] shrink-0 transition-colors',
-            isActiveModule ? 'text-admin-nav' : 'text-admin-nav/55',
+            isActiveModule ? 'text-admin-nav' : 'text-admin-nav/50',
           )}
         />
         <span className="flex-1 truncate text-left">{group.label}</span>
         <ChevronDown
-          className={cn(
-            'h-3.5 w-3.5 shrink-0 text-admin-nav/55 transition-transform duration-200',
-            expanded && 'rotate-180',
-          )}
+          className={cn('h-3.5 w-3.5 shrink-0 text-admin-nav/45 transition-transform duration-200', expanded && 'rotate-180')}
           aria-hidden="true"
         />
       </button>
@@ -472,28 +455,26 @@ function SidebarModule({
         id={panelId}
         // Animating grid-template-rows keeps the transition smooth without
         // measuring the panel's height.
-        className={cn(
-          'grid transition-[grid-template-rows] duration-200 ease-out',
-          expanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]',
-        )}
+        className={cn('grid transition-[grid-template-rows] duration-200 ease-out', expanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]')}
       >
-        <ul className="ml-[1.4rem] space-y-0.5 overflow-hidden border-l border-admin-nav/[0.12] pl-2.5">
+        <ul className="ml-[1.4rem] space-y-0.5 overflow-hidden border-l border-[color:var(--nav-guide)] pl-2.5">
           {group.items.map((item) => {
             const active = isItemActive(item, pathname, search);
             return (
-              <li key={item.href} className={cn(!expanded && 'invisible')}>
+              <li key={item.href} className={cn('relative', !expanded && 'invisible')}>
                 <Link
                   href={item.href}
                   onClick={onNavigate}
                   tabIndex={expanded ? undefined : -1}
                   aria-current={active ? 'page' : undefined}
                   className={cn(
-                    'admin-focus block truncate rounded-lg px-2.5 py-1.5 text-[0.8125rem] transition-colors',
+                    'admin-focus relative block truncate rounded-[10px] px-2.5 py-1.5 text-[0.8125rem] transition-colors',
                     active
-                      ? 'bg-admin-nav/[0.08] font-medium text-admin-nav'
-                      : 'text-admin-nav/70 hover:bg-admin-nav/[0.06] hover:text-admin-nav',
+                      ? 'bg-admin-nav/[0.07] font-medium text-admin-nav'
+                      : 'text-admin-nav/65 hover:bg-admin-nav/[0.05] hover:text-admin-nav',
                   )}
                 >
+                  {active ? <ActiveBar className="-left-[0.7rem]" /> : null}
                   {item.label}
                 </Link>
               </li>
@@ -505,13 +486,22 @@ function SidebarModule({
   );
 }
 
+/** The 3px accent bar that marks the active item, so it is not colour alone. */
+function ActiveBar({ className }: { className?: string }) {
+  return (
+    <span
+      aria-hidden="true"
+      className={cn('absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-full bg-brand', className)}
+    />
+  );
+}
+
 function SidebarLink({
   href,
   label,
   icon,
   active,
   collapsed,
-  external,
   onNavigate,
 }: {
   href: string;
@@ -519,47 +509,45 @@ function SidebarLink({
   icon: string;
   active?: boolean;
   collapsed: boolean;
-  external?: boolean;
   onNavigate: () => void;
 }) {
+  const { rowRef, position, place } = useFlyout();
   return (
-    <Link
-      href={href}
-      onClick={onNavigate}
-      aria-current={active ? 'page' : undefined}
-      aria-label={collapsed ? label : undefined}
-      title={collapsed ? label : undefined}
-      {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
-      className={cn(
-        'admin-focus relative flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors',
-        active
-          ? 'bg-admin-nav/[0.08] font-medium text-admin-nav'
-          : 'text-admin-nav/80 hover:bg-admin-nav/[0.06] hover:text-admin-nav',
-        collapsed && 'lg:justify-center lg:px-0 lg:py-2.5',
-      )}
-    >
-      {/* A brand bar as well as the lift in background, so "active" is not
-          carried by colour alone. */}
-      {active ? (
-        <span
-          aria-hidden="true"
-          className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-brand"
-        />
-      ) : null}
-      <NavIcon
-        name={icon}
+    <div ref={rowRef} onMouseEnter={place} onFocus={place} className="group/link relative">
+      <Link
+        href={href}
+        onClick={onNavigate}
+        aria-current={active ? 'page' : undefined}
+        aria-label={collapsed ? label : undefined}
         className={cn(
-          'h-[1.15rem] w-[1.15rem] shrink-0 transition-colors',
-          active ? 'text-admin-nav' : 'text-admin-nav/55',
+          'admin-focus relative flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm transition-colors',
+          active
+            ? 'bg-admin-nav/[0.07] font-medium text-admin-nav'
+            : 'text-admin-nav/75 hover:bg-admin-nav/[0.05] hover:text-admin-nav',
+          collapsed && 'lg:h-10 lg:justify-center lg:px-0',
         )}
-      />
-      <span className={cn('truncate', collapsed && 'lg:hidden')}>{label}</span>
-      {external && !collapsed ? (
-        <ExternalLink
-          className="ml-auto h-3.5 w-3.5 shrink-0 text-admin-nav/55"
-          aria-hidden="true"
+      >
+        {active ? <ActiveBar /> : null}
+        <NavIcon
+          name={icon}
+          className={cn('h-[1.15rem] w-[1.15rem] shrink-0 transition-colors', active ? 'text-admin-nav' : 'text-admin-nav/50')}
         />
+        <span className={cn('truncate', collapsed && 'lg:hidden')}>{label}</span>
+      </Link>
+      {/* The collapsed rail's tooltip, painted outside the rail's clipping. */}
+      {collapsed ? (
+        <span
+          role="tooltip"
+          style={position ? { top: position.top + 4, left: position.left } : undefined}
+          className={cn(
+            'glass-menu pointer-events-none fixed z-tooltip ml-2 hidden whitespace-nowrap px-2.5 py-1.5 text-xs font-medium text-admin-nav opacity-0 transition-opacity duration-150',
+            position && 'lg:block',
+            'group-hover/link:opacity-100 group-focus-within/link:opacity-100',
+          )}
+        >
+          {label}
+        </span>
       ) : null}
-    </Link>
+    </div>
   );
 }
