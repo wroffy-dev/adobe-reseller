@@ -139,6 +139,8 @@ import {
   ProductRelatedBlock,
   ProductPriceBoxBlock,
 } from './blocks/product-detail-blocks';
+import { ManualPricingTableBlock } from './blocks/pricing-blocks';
+import type { ManualPricingTableContent } from '@/lib/cms/pricing-blocks';
 
 /**
  * The minimum a row needs to be rendered.
@@ -189,6 +191,8 @@ async function BlockBody({ section, ctx }: { section: RenderableSection; ctx: Bl
       return <ProductCardsBlock content={parse<ProductCardsContent>()} ctx={ctx} />;
     case 'productTable':
       return <ProductTableBlock content={parse<ProductTableContent>()} ctx={ctx} />;
+    case 'manualPricingTable':
+      return <ManualPricingTableBlock content={parse<ManualPricingTableContent>()} ctx={ctx} />;
     case 'productGrid':
       return <ProductGridBlock content={parse<ProductGridContent>()} ctx={ctx} />;
     case 'faq':

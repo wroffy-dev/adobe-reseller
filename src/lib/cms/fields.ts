@@ -98,6 +98,11 @@ type FieldVariant =
       titleField: string;
       fields: FieldDescriptor[];
       max?: number;
+      /**
+       * Items carry a stable `id`: a new or duplicated row gets its own, so a
+       * row keeps its identity when rows are reordered.
+       */
+      identity?: boolean;
     };
 
 export type FieldDescriptor = FieldVariant & {

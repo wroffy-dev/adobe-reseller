@@ -8,6 +8,20 @@ This project uses [semantic versioning](https://semver.org): MAJOR.MINOR.PATCH.
 
 ---
 
+## [1.6.0] — 2026-10-13
+
+### Added
+
+- **Manual Pricing Comparison** page section (Content group): pricing cards
+  written entirely in the CMS — plans, prices, badges, feature lists and
+  buttons — with no products involved. Any number of plans can be
+  highlighted; every card, row and button can be styled individually; layout
+  controls cover columns per breakpoint, equal widths or spans, gaps, card
+  height and the card area's width. Defaults match the supplied reference
+  design. See [docs/MANUAL-PRICING.md](docs/MANUAL-PRICING.md).
+- CMS repeaters can **duplicate** a row, and repeaters that need it give
+  every row a stable id that survives reordering.
+
 ## [1.5.0] — 2026-10-05
 
 ### Changed
