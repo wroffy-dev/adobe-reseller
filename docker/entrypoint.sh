@@ -47,6 +47,33 @@ prisma() {
 # deliberate: a replica that starts against a schema it does not match serves
 # errors, and silently continuing would hide the cause.
 if [ "${RUN_MIGRATIONS:-true}" = "true" ]; then
+  # Clear failed records left by migrations this image does not contain.
+  #
+  # A failed row in _prisma_migrations blocks every later `migrate deploy` with
+  # P3009. When that row belongs to a migration from *another* codebase (a
+  # deployment that was briefly pointed at the wrong repository against this
+  # database), there is nothing here that could ever retry or roll it back, so
+  # the container can never start again without a manual SQL fix. Only rows
+  # that are failed (not finished, not rolled back) AND whose name is absent
+  # from prisma/migrations are removed; a failed migration of this codebase is
+  # left alone and still stops the container, as it should.
+  MIGRATIONS_DIR="/app/prisma/migrations"
+  if [ -d "$MIGRATIONS_DIR" ]; then
+    local_names=""
+    for dir in "$MIGRATIONS_DIR"/*/; do
+      name="$(basename "$dir")"
+      local_names="${local_names}${local_names:+,}'${name}'"
+    done
+    if [ -n "$local_names" ]; then
+      if printf '%s\n' "DO \$\$ BEGIN IF to_regclass('_prisma_migrations') IS NOT NULL THEN DELETE FROM \"_prisma_migrations\" WHERE finished_at IS NULL AND rolled_back_at IS NULL AND migration_name NOT IN (${local_names}); END IF; END \$\$;" \
+        | prisma db execute --stdin --schema /app/prisma/schema.prisma >/dev/null 2>&1; then
+        log info migrate.cleanup "cleared failed records of migrations not in this image"
+      else
+        log warn migrate.cleanup "could not check for foreign failed migrations; continuing"
+      fi
+    fi
+  fi
+
   log info migrate.start "applying database migrations"
 
   attempt=1

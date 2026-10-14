@@ -18,6 +18,15 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
+/*
+ * Every page is rendered per request. The root layout reads the database (the
+ * site's settings) and the request (its market), and the image is built with
+ * no database to reach — see the Dockerfile. Reading the consent cookie here
+ * used to make that true by accident; with the tags moved to the public layout
+ * it is said outright, or the build tries to pre-render /_not-found and fails.
+ */
+export const dynamic = 'force-dynamic';
+
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
