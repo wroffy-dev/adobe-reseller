@@ -18,6 +18,7 @@ import { Spinner } from '@/components/ui/icons';
 import { slugify } from '@/lib/utils/slug';
 import { SUPPORTED_CURRENCIES, formatMoney } from '@/lib/utils/money';
 import { cn } from '@/lib/utils/cn';
+import { PrimaryKeywordFields } from '@/components/admin/seo/primary-keyword-fields';
 
 export type ProductFormValues = {
   id?: string;
@@ -57,6 +58,8 @@ export type ProductFormValues = {
   seoDescription: string;
   canonicalUrl: string;
   noIndex: boolean;
+  /** Always three slots; empty ones are dropped on save. */
+  primaryKeywords: string[];
 };
 
 export const EMPTY_PRODUCT: ProductFormValues = {
@@ -96,6 +99,7 @@ export const EMPTY_PRODUCT: ProductFormValues = {
   seoDescription: '',
   canonicalUrl: '',
   noIndex: false,
+  primaryKeywords: ['', '', ''],
 };
 
 const TABS = [
@@ -177,6 +181,7 @@ export function ProductForm({
     data.set('benefits', JSON.stringify(values.benefits.filter(Boolean)));
     data.set('specs', JSON.stringify(values.specs.filter((s) => s.label)));
     data.set('galleryIds', JSON.stringify(values.galleryIds));
+    data.set('primaryKeywords', JSON.stringify(values.primaryKeywords));
 
     const result =
       mode === 'create' ? await createProduct(data) : await updateProduct(initial.id!, data);
@@ -613,6 +618,11 @@ export function ProductForm({
                   onChange={(e) => set('seoDescription', e.target.value)}
                 />
               </Field>
+              <PrimaryKeywordFields
+                values={values.primaryKeywords}
+                onChange={(next) => set('primaryKeywords', next)}
+                hint="Up to three phrases, for every country that sets none of its own below."
+              />
               <Field label="Canonical URL" htmlFor="canonicalUrl">
                 <Input
                   id="canonicalUrl"

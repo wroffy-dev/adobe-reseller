@@ -6,7 +6,10 @@ import { getWebsiteSettings } from '@/lib/services/settings';
 import { SectionList } from '@/components/cms/section-renderer';
 import { JsonLd } from '@/components/seo/json-ld';
 import { buildMetadata } from '@/lib/seo/metadata';
-import { countryBreadcrumbSchema, faqSchema } from '@/lib/seo/structured-data';
+import { cityServiceSchema, countryBreadcrumbSchema, faqSchema } from '@/lib/seo/structured-data';
+import { getCountrySettings } from '@/lib/country/settings';
+import { cityOfPage, pagePublicPaths } from '@/lib/services/cities';
+import { absoluteCountryUrl, absoluteUrl } from '@/lib/seo/metadata';
 import { parseBlockContent, type FaqContent } from '@/lib/cms/blocks';
 import type { CountryContext } from '@/lib/country/types';
 import { listActiveCountries } from '@/lib/country/registry';
@@ -61,6 +64,7 @@ export async function cmsPageMetadata(
     alternateCountryIds: alternates,
     alternatePaths,
     canonicalUrl: page.canonicalUrl,
+    keywords: page.primaryKeywords,
     noIndex: page.noIndex,
     noFollow: page.noFollow,
     ogTitle: page.ogTitle,
@@ -100,19 +104,45 @@ export async function CmsPageSurface({
     .flatMap((s) => parseBlockContent<FaqContent>('faq', s.content).items);
   const faq = faqSchema(faqItems);
 
+  // A city page sits under Home; a city's product page under its city.
+  const city = slug === '' ? null : await cityOfPage(page.id);
+  const parent =
+    city?.kind === 'cityProduct' && city.parent && city.parent.status === 'PUBLISHED'
+      ? { name: city.city.name, path: (await pagePublicPaths([{ ...city.parent, countryId: page.countryId }])).get(city.parent.id) }
+      : null;
+
   const crumbs =
     slug === ''
       ? null
       : countryBreadcrumbSchema(country, [
           { name: site.siteName, path: '' },
-          { name: page.title, path: path ?? slug },
+          ...(parent?.path ? [{ name: parent.name, path: parent.path }] : []),
+          { name: city?.kind === 'city' ? city.city.name : page.title, path: path ?? slug },
         ]);
+
+  let service = null;
+  if (city) {
+    const local = await getCountrySettings(country);
+    service = cityServiceSchema({
+      name: page.seoTitle?.split('|')[0]?.trim() || page.title,
+      description: page.seoDescription,
+      url: absoluteUrl(path ?? `/${slug}`),
+      provider: {
+        type: local.localBusinessType || local.organizationType || 'Organization',
+        name: local.organizationName,
+        url: absoluteCountryUrl(country, '/'),
+      },
+      city: { name: city.city.name, region: city.city.region },
+      country,
+    });
+  }
 
   return (
     <>
       <SectionList sections={page.sections} country={country} />
       {faq ? <JsonLd data={faq} /> : null}
       {crumbs ? <JsonLd data={crumbs} /> : null}
+      {service ? <JsonLd data={service} /> : null}
     </>
   );
 }

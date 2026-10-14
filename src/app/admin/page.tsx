@@ -89,7 +89,9 @@ export default async function AdminDashboard({
   const outstandingSetup = setupChecks.filter((check) => !check.configured);
 
   return (
-    <>
+    // Overview screen: an ambient wash behind glass panels.
+    <div className="dashboard">
+      <div className="ambient" aria-hidden="true" />
       <AdminPageHeader
         title={`Welcome back, ${user.name.split(' ')[0]}`}
         description={
@@ -118,7 +120,7 @@ export default async function AdminDashboard({
       ) : null}
 
       {/* --- KPIs ------------------------------------------------------- */}
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
         {canSeeLeads ? (
           <>
             <StatCard
@@ -192,7 +194,7 @@ export default async function AdminDashboard({
       {/* --- Needs attention + quick actions ---------------------------- */}
       <div className="mt-5 grid gap-5 lg:grid-cols-3">
         {actionItems.length > 0 ? (
-          <Card className="lg:col-span-2">
+          <Card glass className="lg:col-span-2">
             <CardHeader
               title="Needs attention"
               description={
@@ -211,7 +213,7 @@ export default async function AdminDashboard({
                         'flex items-center gap-3 rounded-lg border px-3 py-2.5 transition-colors',
                         item.tone === 'attention' && item.count > 0
                           ? 'border-amber-200 bg-amber-50/60 hover:border-amber-300'
-                          : 'border-hairline hover:border-brand/40 hover:bg-muted/[0.03]',
+                          : 'glass-chip border-hairline hover:border-brand/40',
                       )}
                     >
                       <span
@@ -236,7 +238,7 @@ export default async function AdminDashboard({
           </Card>
         ) : null}
 
-        <Card className={cn(actionItems.length === 0 && 'lg:col-span-3')}>
+        <Card glass className={cn(actionItems.length === 0 && 'lg:col-span-3')}>
           <CardHeader title="Quick actions" />
           <CardBody className="pt-0">
             <QuickActions can={can} />
@@ -247,7 +249,7 @@ export default async function AdminDashboard({
       {/* --- Trend + pipeline ------------------------------------------- */}
       {canSeeLeads ? (
         <div className="mt-5 grid gap-5 lg:grid-cols-3">
-          <Card className="lg:col-span-2">
+          <Card glass className="lg:col-span-2">
             <CardHeader
               title="Leads over the last 30 days"
               actions={
@@ -265,7 +267,7 @@ export default async function AdminDashboard({
             </CardBody>
           </Card>
 
-          <Card>
+          <Card glass>
             <CardHeader
               title="Pipeline"
               actions={
@@ -305,7 +307,7 @@ export default async function AdminDashboard({
       {/* --- Recent leads + activity + setup ---------------------------- */}
       <div className="mt-5 grid gap-5 lg:grid-cols-3">
         {canSeeLeads ? (
-          <Card className="lg:col-span-2">
+          <Card glass className="lg:col-span-2">
             <CardHeader
               title="Recent leads"
               actions={
@@ -358,7 +360,7 @@ export default async function AdminDashboard({
 
         <div className={cn('space-y-5', !canSeeLeads && 'lg:col-span-3')}>
           {setupChecks.length > 0 ? (
-            <Card>
+            <Card glass>
               <CardHeader
                 title="Setup"
                 description={
@@ -412,7 +414,7 @@ export default async function AdminDashboard({
           ) : null}
 
           {recentActivity.length > 0 ? (
-            <Card>
+            <Card glass>
               <CardHeader
                 title="Recent activity"
                 actions={
@@ -447,6 +449,6 @@ export default async function AdminDashboard({
           ) : null}
         </div>
       </div>
-    </>
+    </div>
   );
 }

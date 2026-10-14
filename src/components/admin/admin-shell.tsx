@@ -4,6 +4,7 @@ import * as React from 'react';
 import { SessionProvider } from 'next-auth/react';
 import { AdminSidebar } from './sidebar';
 import { AdminTopbar } from './topbar';
+import { AdminThemeProvider } from './theme';
 import { cn } from '@/lib/utils/cn';
 import type { CountryContext } from '@/lib/country/types';
 
@@ -58,9 +59,17 @@ export function AdminShell({
 
   const isCollapsed = ready && collapsed;
 
+  // Portalled dialogs, menus and toasts render into <body>, so it carries the
+  // admin scope too while the admin is mounted — and only then.
+  React.useEffect(() => {
+    document.body.classList.add('admin-ui');
+    return () => document.body.classList.remove('admin-ui');
+  }, []);
+
   return (
     <SessionProvider>
-      <div className="min-h-screen bg-admin-workspace">
+      <AdminThemeProvider>
+      <div className="admin-ui min-h-screen bg-admin-workspace">
         <a href="#admin-main" className="skip-link">
           Skip to content
         </a>
@@ -77,17 +86,15 @@ export function AdminShell({
           onToggleCollapsed={toggleCollapsed}
         />
 
-        <div
-          className={cn(
-            'transition-[padding] duration-200 ease-out',
-            isCollapsed ? 'lg:pl-[4.5rem]' : 'lg:pl-64',
-          )}
-        >
+        {/* The floating rail sits 12px in from the edge, so content clears
+            it: 280px beside the open rail, 100px beside the collapsed one. */}
+        <div className={cn('admin-content', isCollapsed ? 'lg:pl-[6.25rem]' : 'lg:pl-[17.5rem]')}>
           <AdminTopbar
             user={{
               name: user.name,
               email: user.email,
               roleName: user.roleName,
+              image: user.image,
             }}
             permissions={user.permissions}
             isSuperAdmin={user.isSuperAdmin}
@@ -95,11 +102,12 @@ export function AdminShell({
             countries={countries}
             onOpenSidebar={() => setSidebarOpen(true)}
           />
-          <main id="admin-main" className="mx-auto w-full max-w-[100rem] px-4 py-6 sm:px-6 sm:py-8">
+          <main id="admin-main" className="mx-auto w-full max-w-[100rem] px-4 pb-10 pt-4 sm:px-6 sm:pt-6">
             {children}
           </main>
         </div>
       </div>
+      </AdminThemeProvider>
     </SessionProvider>
   );
 }

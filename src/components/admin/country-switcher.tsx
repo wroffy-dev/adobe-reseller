@@ -44,12 +44,12 @@ export function AdminCountrySwitcher({
     <Menu
       align="right"
       label="Country"
-      triggerClassName="admin-focus admin-focus-header"
+      triggerClassName="admin-focus rounded-xl"
       trigger={
         <span
           className={cn(
-            'flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-sm text-admin-nav',
-            'transition-colors hover:bg-admin-nav/[0.08]',
+            'flex h-9 items-center gap-1.5 rounded-xl px-2.5 text-sm text-admin-nav',
+            'transition-colors hover:bg-admin-nav/[0.06]',
             pending && 'opacity-60',
           )}
         >

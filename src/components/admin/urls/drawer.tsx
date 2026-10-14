@@ -71,14 +71,14 @@ export function Drawer({
 
   return createPortal(
     <div className="fixed inset-0 z-modal flex justify-end">
-      <div className="absolute inset-0 bg-[rgb(var(--brand-secondary))]/45 backdrop-blur-[1px]" onClick={onClose} aria-hidden="true" />
+      <div className="ui-scrim absolute inset-0 bg-[rgb(var(--brand-secondary))]/45 backdrop-blur-[1px]" onClick={onClose} aria-hidden="true" />
       <div
         ref={panelRef}
         role="dialog"
         aria-modal="true"
         aria-label={title}
         className={cn(
-          'relative z-10 flex h-full w-full flex-col bg-surface shadow-2xl',
+          'ui-drawer relative z-10 flex h-full w-full flex-col bg-surface shadow-2xl',
           width === 'lg' ? 'sm:max-w-2xl' : 'sm:max-w-lg',
         )}
       >

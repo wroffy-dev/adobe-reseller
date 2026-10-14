@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { Plus, Trash, ChevronDown, GripVertical } from 'lucide-react';
+import { Plus, Trash, ChevronDown, GripVertical, Copy } from 'lucide-react';
 import type { FieldDescriptor } from '@/lib/cms/fields';
 import { isFieldVisible, readFieldPath, writeFieldPath } from '@/lib/cms/fields';
 import { Field, Input, Textarea, Select, Switch, Label } from '@/components/ui/field';
@@ -21,6 +21,7 @@ import {
   BlogCategoryMultiSelect,
 } from './blog-select';
 import { UnitInput, ColorInput } from './design-controls';
+import { newItemId, withFreshItemIds } from '@/lib/cms/item-id';
 import { cn } from '@/lib/utils/cn';
 
 export type FieldValues = Record<string, unknown>;
@@ -386,8 +387,21 @@ function Repeater({
               ? []
               : '';
     }
+    if (field.identity) blank.id = newItemId();
     commit([...items, blank]);
     setOpenIndex(items.length);
+  };
+
+  /** A copy placed right after the original; with identity, every id is new. */
+  const duplicate = (index: number) => {
+    if (field.max && items.length >= field.max) return;
+    const source = items[index];
+    if (!source) return;
+    const copy = field.identity ? withFreshItemIds(structuredClone(source)) : structuredClone(source);
+    const next = [...items];
+    next.splice(index + 1, 0, copy);
+    commit(next);
+    setOpenIndex(index + 1);
   };
 
   const remove = (index: number) => {
@@ -422,7 +436,10 @@ function Repeater({
             const title = String(item[field.titleField] ?? '') || `${field.itemLabel} ${index + 1}`;
             const isOpen = openIndex === index;
             return (
-              <li key={index} className="rounded-lg border border-hairline bg-surface">
+              <li
+                key={typeof item.id === 'string' && item.id ? item.id : index}
+                className="rounded-lg border border-hairline bg-surface"
+              >
                 <div className="flex items-center gap-1 px-2 py-1.5">
                   <span className="flex flex-col">
                     <button
@@ -460,6 +477,18 @@ function Repeater({
                     )}
                     aria-hidden="true"
                   />
+                  {!isPrimitive ? (
+                    <button
+                      type="button"
+                      onClick={() => duplicate(index)}
+                      disabled={Boolean(field.max && items.length >= field.max)}
+                      aria-label={`Duplicate ${title}`}
+                      title="Duplicate"
+                      className="rounded p-1.5 text-muted transition-colors hover:bg-muted/10 hover:text-content disabled:opacity-30"
+                    >
+                      <Copy className="h-3.5 w-3.5" />
+                    </button>
+                  ) : null}
                   <button
                     type="button"
                     onClick={() => remove(index)}

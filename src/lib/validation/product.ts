@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { formBoolean } from './boolean';
+import { normaliseKeywords } from '@/lib/cities/defaults';
 import { slugify } from '@/lib/utils/slug';
 
 const optional = (max: number) =>
@@ -88,6 +89,12 @@ export const productInputSchema = z
     canonicalUrl: optional(500),
     noIndex: formBoolean(false),
     ogImageId: optional(40),
+    /** Up to three target phrases for every market without its own. */
+    primaryKeywords: z
+      .array(z.string().max(120))
+      .max(10)
+      .default([])
+      .transform((values) => normaliseKeywords(values)),
   })
   .refine(
     (data) => data.minUsers === null || data.maxUsers === null || data.maxUsers >= data.minUsers,

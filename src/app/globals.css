@@ -444,6 +444,113 @@
   .cms-stack > * + * { margin-top: var(--sec-content-gap, 1rem); }
 
   /*
+    Manual Pricing Comparison. Every value an administrator sets arrives as a
+    CSS variable on the grid, a card or a button, with the reference design as
+    the fallback — so nothing here generates per-section classes.
+  */
+  .mpt-grid {
+    display: grid;
+    width: 100%;
+    max-width: var(--mpt-max-w, none);
+    grid-template-columns: repeat(var(--grid-cols, 3), minmax(0, 1fr));
+    column-gap: var(--mpt-col-gap, var(--sec-col-gap, var(--sec-card-gap, 1.5rem)));
+    row-gap: var(--mpt-row-gap, var(--sec-row-gap, var(--sec-card-gap, 1.5rem)));
+    align-items: var(--mpt-align, stretch);
+  }
+  .mpt-card {
+    grid-column: span var(--mpt-span, 1);
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    background: var(--mpt-bg, #fff);
+    border: var(--mpt-border-w, 1px) solid var(--mpt-border-color, #e5e7eb);
+    border-radius: var(--mpt-radius, 12px);
+    padding: var(--mpt-pad, 24px);
+    box-shadow: var(--mpt-shadow, none);
+    color: var(--mpt-text, rgb(var(--brand-text) / 0.85));
+    overflow-wrap: anywhere;
+    transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+  }
+  .mpt-card--equal { height: 100%; }
+  .mpt-card .mpt-name { color: var(--mpt-heading, rgb(var(--brand-text))); }
+  .mpt-card .mpt-text { color: var(--mpt-text, rgb(var(--brand-text) / 0.85)); }
+  .mpt-badge {
+    align-self: flex-start;
+    margin-bottom: 0.75rem;
+    border-radius: 9999px;
+    padding: 0.2rem 0.6rem;
+    font-size: 0.6875rem;
+    font-weight: 500;
+    line-height: 1.4;
+    background: var(--mpt-badge-bg, #ffe1e1);
+    color: var(--mpt-badge-text, #c81e1e);
+  }
+  .mpt-separator {
+    margin: 1.25rem 0;
+    border: 0;
+    border-top: 1px solid var(--mpt-sep, #e5e7eb);
+  }
+  .mpt-features {
+    display: flex;
+    flex-direction: column;
+    gap: var(--mpt-feature-gap, 0.625rem);
+    font-size: 0.8125rem;
+    line-height: 1.55;
+  }
+  .mpt-feature { display: flex; align-items: flex-start; gap: 0.625rem; }
+  .mpt-check {
+    margin-top: 0.2em;
+    height: 0.95rem;
+    width: 0.95rem;
+    flex-shrink: 0;
+    color: var(--mpt-check, var(--mpt-heading, rgb(var(--brand-text))));
+  }
+  .mpt-check-space { width: 0.95rem; flex-shrink: 0; }
+  .mpt-row-label { font-weight: 600; color: var(--mpt-heading, rgb(var(--brand-text))); }
+  .mpt-actions { display: flex; padding-top: 1.5rem; }
+  .mpt-actions--bottom { margin-top: auto; }
+  .mpt-btn {
+    display: inline-flex;
+    max-width: 100%;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: var(--mpt-btn-py, 10px) 1.25rem;
+    border: 1px solid var(--mpt-btn-border, transparent);
+    border-radius: var(--mpt-btn-radius, 6px);
+    background: var(--mpt-btn-bg, #ffe1e1);
+    color: var(--mpt-btn-text, #e1251b);
+    font-size: var(--mpt-btn-fs, 13px);
+    font-weight: var(--mpt-btn-fw, 700);
+    line-height: 1.3;
+    letter-spacing: 0.02em;
+    text-transform: var(--mpt-btn-tt, uppercase);
+    overflow-wrap: anywhere;
+    transition: background-color 0.15s ease-out, color 0.15s ease-out;
+  }
+  .mpt-btn--full { width: 100%; }
+  .mpt-btn:hover {
+    background: var(--mpt-btn-hover-bg, var(--mpt-btn-bg, #ffd0d0));
+    color: var(--mpt-btn-hover-text, var(--mpt-btn-text, #e1251b));
+  }
+  .mpt-btn:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+  @media (min-width: 1024px) {
+    .mpt-card[data-emphasis] { transform: translateY(var(--mpt-offset, 0px)) scale(var(--mpt-scale, 1)); }
+  }
+  @media (max-width: 1023px) {
+    .mpt-grid { grid-template-columns: repeat(var(--grid-cols-tablet, 2), minmax(0, 1fr)); }
+    .mpt-card { grid-column: span var(--mpt-span-t, 1); }
+  }
+  @media (max-width: 767px) {
+    .mpt-grid { grid-template-columns: repeat(var(--grid-cols-mobile, 1), minmax(0, 1fr)); }
+    .mpt-card { grid-column: span var(--mpt-span-m, 1); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .mpt-card, .mpt-btn { transition: none; }
+  }
+
+
+  /*
     A block's row of call-to-action buttons. The section's Button position
     (Responsive tab) aligns or stretches it per breakpoint.
   */

@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
+import { queueSeoAnalysis } from '@/lib/seo-intelligence/queue';
 import { authorize } from '@/lib/auth/guards';
 import { recordAudit } from '@/lib/services/audit';
 import { productInputSchema, productCategorySchema, brandSchema } from '@/lib/validation/product';
@@ -86,6 +87,7 @@ function readProductForm(formData: FormData) {
     canonicalUrl: formData.get('canonicalUrl'),
     noIndex: formData.get('noIndex') === 'true',
     ogImageId: formData.get('ogImageId'),
+    primaryKeywords: parseJsonField<string[]>(formData.get('primaryKeywords'), []),
   });
 }
 
@@ -127,6 +129,7 @@ function toPrismaData(input: ReturnType<typeof readProductForm>) {
     canonicalUrl: input.canonicalUrl,
     noIndex: input.noIndex,
     ogImageId: input.ogImageId,
+    primaryKeywords: input.primaryKeywords.map((k) => sanitizeText(k)),
   };
 }
 
@@ -309,6 +312,7 @@ export async function updateProduct(productId: string, formData: FormData): Prom
     await revalidateProduct(before.slug);
     if (slug !== before.slug) await revalidateProduct(slug);
     await syncContentRoutes({ kind: 'product', ids: [productId] }, actorOf(user), 'renamed');
+    queueSeoAnalysis([{ kind: 'product', id: productId }]);
     return success(undefined, 'Product saved.');
   } catch (error) {
     return toActionError(error);
@@ -346,6 +350,7 @@ export async function setProductStatus(
     revalidatePath('/admin/products');
     await revalidateProduct(product.slug);
     await syncContentRoutes({ kind: 'product', ids: [productId] }, actorOf(user), 'renamed');
+    queueSeoAnalysis([{ kind: 'product', id: productId }]);
     return success(undefined, `Product ${status.toLowerCase()}.`);
   } catch (error) {
     return toActionError(error);

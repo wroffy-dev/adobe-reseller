@@ -4,6 +4,8 @@ import { getCurrentUser, requireUser } from '@/lib/auth/guards';
 import { getWebsiteSettings } from '@/lib/services/settings';
 import { getAdminCountryScope } from '@/lib/country/admin';
 import { AdminShell } from '@/components/admin/admin-shell';
+import { ADMIN_THEME_SCRIPT } from '@/components/admin/theme';
+import './admin-ui.css';
 
 /**
  * Titles for the admin — but only for somebody who is actually in it.
@@ -46,7 +48,10 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   ]);
 
   return (
-    <AdminShell
+    <>
+      {/* Applies the saved Light / Dark / System theme before the shell paints. */}
+      <script dangerouslySetInnerHTML={{ __html: ADMIN_THEME_SCRIPT }} />
+      <AdminShell
       user={{
         name: user.name,
         email: user.email,
@@ -58,8 +63,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       branding={{
         siteName: site.siteName,
         logoUrl: site.logoUrl,
-        // The admin rail is dark, so it prefers the dark-surface logo when one
-        // has been uploaded — the same choice the public footer makes.
+        // Shown in dark mode in place of the regular logo, when uploaded.
         logoDarkUrl: site.logoDarkUrl,
       }}
       country={{ id: scope.country.id, code: scope.country.code, name: scope.country.name }}
@@ -72,5 +76,6 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     >
       {children}
     </AdminShell>
+    </>
   );
 }

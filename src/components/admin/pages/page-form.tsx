@@ -12,6 +12,7 @@ import { useToast } from '@/components/ui/toast';
 import { Spinner } from '@/components/ui/icons';
 import { pageSlug } from '@/lib/utils/slug';
 import { cn } from '@/lib/utils/cn';
+import { PrimaryKeywordFields } from '@/components/admin/seo/primary-keyword-fields';
 
 export type PageFormValues = {
   id?: string;
@@ -35,6 +36,8 @@ export type PageFormValues = {
   twitterTitle: string;
   twitterDescription: string;
   twitterImageId: string | null;
+  /** Always three slots; empty ones are dropped on save. */
+  primaryKeywords: string[];
 };
 
 export const EMPTY_PAGE: PageFormValues = {
@@ -57,6 +60,7 @@ export const EMPTY_PAGE: PageFormValues = {
   twitterTitle: '',
   twitterDescription: '',
   twitterImageId: null,
+  primaryKeywords: ['', '', ''],
 };
 
 export function PageForm({
@@ -90,6 +94,10 @@ export function PageForm({
     const data = new FormData();
     for (const [key, value] of Object.entries(values)) {
       if (key === 'id') continue;
+      if (Array.isArray(value)) {
+        for (const item of value) data.append(key, item);
+        continue;
+      }
       data.set(key, value === null ? '' : String(value));
     }
 
@@ -281,6 +289,11 @@ export function PageForm({
                   onChange={(e) => set('seoDescription', e.target.value)}
                 />
               </Field>
+
+              <PrimaryKeywordFields
+                values={values.primaryKeywords}
+                onChange={(next) => set('primaryKeywords', next)}
+              />
 
               <Field
                 label="Canonical URL"

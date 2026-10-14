@@ -1,0 +1,615 @@
+/*
+  Admin UI — Apple-style "Liquid Glass" system.
+
+  Everything in this file is scoped under `.admin-ui`, the class the admin
+  shell puts on its root element and on <body> while it is mounted (so
+  portalled dialogs, menus and toasts inherit it). The public website never
+  carries that class, so nothing here can reach it: this file only ever adds
+  rules that need `.admin-ui` (or `:root[data-admin-theme]` *and* `.admin-ui`)
+  to match. It is imported by the admin layout alone.
+
+  Balance: about 70% solid SaaS UI, 30% glass. Glass is for chrome — the
+  sidebar, topbar, search, menus, KPI cards, filter bars and overview panels.
+  Tables, long forms, editors and builders stay solid.
+
+  Tokens are channels ("R G B"), so alpha is chosen where a colour is used:
+  rgb(var(--token) / 0.5).
+*/
+
+/* The site's own brand values, captured before the admin re-points them, so
+   an in-admin preview of a public component can restore them. */
+:root {
+  --site-brand-text: var(--brand-text);
+  --site-brand-muted: var(--brand-muted);
+  --site-brand-border: var(--brand-border);
+  --site-brand-background: var(--brand-background);
+  --site-font-heading: var(--font-heading);
+  --site-font-body: var(--font-body);
+}
+
+/* The admin is sized in rem; the public site's base size is a design setting
+   and must not shrink or grow the admin. */
+:root:has(body.admin-ui) {
+  font-size: 16px;
+}
+
+/* ---------------------------------------------------------------------------
+   1. Tokens
+   --------------------------------------------------------------------------- */
+
+.admin-ui {
+  /* Text, surfaces, borders */
+  --text: 17 24 39;
+  --text-muted: 99 104 115;
+  --border: 229 231 235;
+  --surface: 255 255 255;
+  --surface-soft: 250 250 251;
+  --workspace-bg: 245 246 248;
+
+  /* Primary action is near-black; the brand colour is only the accent. */
+  --primary: 17 17 17;
+  --primary-fg: 255 255 255;
+  --accent: var(--brand-primary);
+
+  /* Navigation, derived from one foreground */
+  --nav-fg: 17 24 39;
+  --nav-hover: rgb(17 24 39 / 0.05);
+  --nav-active: rgb(17 24 39 / 0.07);
+  --nav-guide: rgb(17 24 39 / 0.1);
+
+  /* Glass: two channels retune the whole family per theme */
+  --glass-tint: 255 255 255;
+  --shadow-ink: 15 23 42;
+
+  /* Radius */
+  --radius-shell: 24px;
+  --radius-card: 18px;
+  --radius-card-sm: 14px;
+  --radius-control: 12px;
+  --radius-menu: 14px;
+
+  /* Depth: border + soft shadow */
+  --shadow-sm: 0 1px 2px rgb(17 24 39 / 0.04), 0 1px 3px rgb(17 24 39 / 0.03);
+  --shadow-md: 0 2px 6px rgb(17 24 39 / 0.04), 0 10px 28px rgb(17 24 39 / 0.06);
+  --shadow-lg: 0 6px 16px rgb(17 24 39 / 0.06), 0 28px 64px rgb(17 24 39 / 0.12);
+
+  --font: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, sans-serif;
+
+  /*
+    Re-point the app's generic tokens, so every existing admin screen
+    (`text-content`, `text-muted`, `border-hairline`, `bg-surface`) picks the
+    system up without markup changes. `--brand-primary` is left alone: the
+    brand colour stays the accent.
+  */
+  --brand-text: var(--text);
+  --brand-muted: var(--text-muted);
+  --brand-border: var(--border);
+  --brand-background: var(--surface);
+
+  /* The shell's own tokens, now light chrome. */
+  --admin-nav-fg: var(--nav-fg);
+  --admin-workspace-bg: var(--workspace-bg);
+  --admin-sidebar-bg: var(--glass-tint);
+  --admin-header-bg: var(--glass-tint);
+
+  /* Admin typography is the system's, never the website's design setting. */
+  --font-heading: var(--font);
+  --font-body: var(--font);
+  --font-heading-weight: 700;
+  --font-body-weight: 400;
+  --font-heading-leading: 1.2;
+  --font-body-leading: 1.5;
+  --font-heading-tracking: -0.02em;
+  --font-body-tracking: 0em;
+
+  font-family: var(--font);
+  color: rgb(var(--text));
+}
+
+body.admin-ui {
+  background-color: rgb(var(--workspace-bg));
+}
+
+/* An in-admin preview of a public component keeps the website's own look. */
+.admin-ui .admin-site-preview {
+  --brand-text: var(--site-brand-text);
+  --brand-muted: var(--site-brand-muted);
+  --brand-border: var(--site-brand-border);
+  --brand-background: var(--site-brand-background);
+  --font-heading: var(--site-font-heading);
+  --font-body: var(--site-font-body);
+}
+
+.admin-ui fieldset {
+  min-inline-size: 0;
+}
+
+/* Focus: a visible accent ring everywhere, offset against the surface. */
+.admin-ui :focus-visible {
+  --tw-ring-color: rgb(var(--accent) / 0.6);
+  --tw-ring-offset-color: rgb(var(--surface));
+}
+.admin-ui .admin-focus,
+.admin-ui .admin-focus-header {
+  --tw-ring-color: rgb(var(--accent) / 0.6);
+  --tw-ring-offset-color: transparent;
+}
+
+.admin-ui .admin-scroll {
+  scrollbar-color: rgb(var(--nav-fg) / 0.16) transparent;
+}
+
+/* ---------------------------------------------------------------------------
+   2. Liquid Glass recipes
+   --------------------------------------------------------------------------- */
+
+.admin-ui .glass-bar {
+  background: rgb(var(--glass-tint) / 0.72);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgb(var(--glass-tint) / 0.7);
+  box-shadow:
+    0 1px 2px rgb(var(--shadow-ink) / 0.04),
+    0 8px 24px rgb(var(--shadow-ink) / 0.06),
+    inset 0 1px 0 rgb(var(--glass-tint) / 0.8);
+}
+.admin-ui .glass-rail {
+  background: rgb(var(--glass-tint) / 0.68);
+  -webkit-backdrop-filter: blur(22px) saturate(170%);
+  backdrop-filter: blur(22px) saturate(170%);
+  border: 1px solid rgb(var(--glass-tint) / 0.7);
+  box-shadow:
+    0 1px 2px rgb(var(--shadow-ink) / 0.04),
+    0 12px 32px rgb(var(--shadow-ink) / 0.06),
+    inset 0 1px 0 rgb(var(--glass-tint) / 0.8);
+}
+.admin-ui .glass-card {
+  background: rgb(var(--glass-tint) / 0.7);
+  -webkit-backdrop-filter: blur(14px) saturate(150%);
+  backdrop-filter: blur(14px) saturate(150%);
+  border: 1px solid rgb(var(--glass-tint) / 0.75);
+  box-shadow: var(--shadow-sm), inset 0 1px 0 rgb(var(--glass-tint) / 0.85);
+}
+.admin-ui .glass-menu {
+  /* More opaque than the other glass: menus and fly-outs sit over dense
+     text, and legibility wins over transparency. */
+  background: rgb(var(--glass-tint) / 0.94);
+  -webkit-backdrop-filter: blur(18px) saturate(180%);
+  backdrop-filter: blur(18px) saturate(180%);
+  border: 1px solid rgb(var(--border) / 0.9);
+  box-shadow: var(--shadow-lg);
+  border-radius: var(--radius-menu);
+}
+.admin-ui .glass-panel {
+  background: linear-gradient(180deg, rgb(var(--glass-tint) / 0.66), rgb(var(--glass-tint) / 0.44));
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
+  border-color: rgb(var(--glass-tint) / 0.75);
+  box-shadow:
+    0 1px 2px rgb(var(--shadow-ink) / 0.04),
+    0 14px 36px rgb(var(--shadow-ink) / 0.06),
+    inset 0 1px 0 rgb(var(--glass-tint) / 0.9);
+}
+.admin-ui .glass-panel .border-hairline {
+  border-color: rgb(var(--border) / 0.55);
+}
+.admin-ui .glass-chip {
+  background-color: rgb(var(--glass-tint) / 0.42);
+  box-shadow: inset 0 1px 0 rgb(var(--glass-tint) / 0.7);
+}
+.admin-ui .glass-chip:hover {
+  background-color: rgb(var(--glass-tint) / 0.85);
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .admin-ui .glass-bar,
+  .admin-ui .glass-rail,
+  .admin-ui .glass-card,
+  .admin-ui .glass-menu,
+  .admin-ui .glass-panel {
+    background: rgb(var(--glass-tint) / 0.97);
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .admin-ui .glass-bar,
+  .admin-ui .glass-rail,
+  .admin-ui .glass-card,
+  .admin-ui .glass-menu,
+  .admin-ui .glass-panel {
+    background: rgb(var(--glass-tint) / 0.97);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+/* Glass needs colour behind it: a decorative wash for overview screens. */
+.admin-ui .dashboard {
+  position: relative;
+  isolation: isolate;
+}
+.admin-ui .ambient {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(44rem 34rem at 12% 8%, rgb(var(--accent) / 0.24), transparent 62%),
+    radial-gradient(38rem 30rem at 88% 14%, rgb(139 92 246 / 0.2), transparent 62%),
+    radial-gradient(46rem 34rem at 62% 96%, rgb(20 184 166 / 0.17), transparent 62%),
+    radial-gradient(30rem 24rem at 30% 62%, rgb(236 72 153 / 0.1), transparent 62%);
+}
+@media (prefers-reduced-transparency: reduce) {
+  .admin-ui .ambient {
+    display: none;
+  }
+}
+
+/* The sticky topbar's fade strip, in the workspace colour. */
+.admin-ui .topbar-fade {
+  background: linear-gradient(
+    to bottom,
+    rgb(var(--workspace-bg)) 0%,
+    rgb(var(--workspace-bg) / 0.92) 55%,
+    rgb(var(--workspace-bg) / 0) 100%
+  );
+}
+/* Over the ambient wash a solid strip would read as a grey band: blur instead. */
+.admin-ui:has(.dashboard) .topbar-fade {
+  background: none;
+}
+.admin-ui:has(.dashboard) .topbar-fade::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  -webkit-mask-image: linear-gradient(to bottom, #000 55%, transparent);
+  mask-image: linear-gradient(to bottom, #000 55%, transparent);
+}
+
+/* ---------------------------------------------------------------------------
+   3. Shell
+   --------------------------------------------------------------------------- */
+
+.admin-ui .admin-content {
+  transition: padding 200ms ease-out;
+}
+
+/* Logos: a separate dark-surface logo, when there is one, swaps in dark mode. */
+.admin-ui .logo-dark {
+  display: none;
+}
+
+/* ---------------------------------------------------------------------------
+   4. Primitives — restyled through marker classes that mean nothing outside
+      the admin, so the website's own buttons and cards are untouched.
+   --------------------------------------------------------------------------- */
+
+/* Buttons */
+.admin-ui .ui-btn {
+  border-radius: var(--radius-control);
+  transition: background-color 150ms ease-out, border-color 150ms ease-out, color 150ms ease-out, box-shadow 150ms ease-out;
+}
+.admin-ui .ui-btn--md {
+  height: 2.5rem;
+}
+.admin-ui .ui-btn--sm {
+  height: 2.125rem;
+  border-radius: 10px;
+}
+.admin-ui .ui-btn--primary {
+  background-color: rgb(var(--primary));
+  color: rgb(var(--primary-fg));
+  box-shadow: 0 1px 2px rgb(var(--shadow-ink) / 0.12), inset 0 1px 0 rgb(255 255 255 / 0.08);
+}
+.admin-ui .ui-btn--primary:hover {
+  background-color: rgb(var(--primary) / 0.86);
+}
+.admin-ui .ui-btn--primary:active {
+  background-color: rgb(var(--primary) / 0.92);
+}
+.admin-ui .ui-btn--outline,
+.admin-ui .ui-btn--secondary {
+  background-color: rgb(var(--surface));
+  color: rgb(var(--text));
+  border: 1px solid rgb(var(--border));
+  box-shadow: var(--shadow-sm);
+}
+.admin-ui .ui-btn--outline:hover,
+.admin-ui .ui-btn--secondary:hover {
+  background-color: rgb(var(--surface-soft));
+  border-color: rgb(var(--text) / 0.16);
+}
+.admin-ui .ui-btn--ghost:hover,
+.admin-ui .ui-btn--subtle:hover {
+  background-color: rgb(var(--text) / 0.06);
+}
+.admin-ui .ui-btn--subtle {
+  background-color: rgb(var(--text) / 0.05);
+}
+
+/* Inputs, selects, textareas */
+.admin-ui .ui-input {
+  border-radius: var(--radius-control);
+  border-color: rgb(var(--border));
+  background-color: rgb(var(--surface));
+  box-shadow: 0 1px 1px rgb(var(--shadow-ink) / 0.02);
+}
+.admin-ui .ui-input:hover:not(:disabled):not(:focus) {
+  border-color: rgb(var(--text) / 0.18);
+}
+.admin-ui .ui-input:focus {
+  border-color: rgb(var(--accent) / 0.7);
+  --tw-ring-color: rgb(var(--accent) / 0.25);
+}
+.admin-ui .ui-input::placeholder {
+  color: rgb(var(--text-muted) / 0.75);
+}
+
+/* Cards */
+.admin-ui .ui-card {
+  border-radius: var(--radius-card);
+  border-color: rgb(var(--border));
+  box-shadow: var(--shadow-sm);
+}
+.admin-ui .ui-card-header h2 {
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+/* KPI tiles */
+.admin-ui .ui-stat {
+  border-radius: var(--radius-card);
+  transition: transform 150ms ease-out, box-shadow 150ms ease-out, background-color 150ms ease-out;
+}
+.admin-ui a.ui-stat:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md), inset 0 1px 0 rgb(var(--glass-tint) / 0.85);
+}
+.admin-ui .ui-stat-value {
+  font-family: var(--font);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Badges */
+.admin-ui .ui-badge {
+  font-weight: 500;
+  letter-spacing: 0.005em;
+}
+
+/* Tabs */
+.admin-ui .ui-tabs {
+  scrollbar-width: none;
+}
+.admin-ui .ui-tabs::-webkit-scrollbar {
+  display: none;
+}
+.admin-ui .ui-tab[aria-selected='true'] {
+  color: rgb(var(--text));
+}
+
+/* Tables: solid, readable, calm */
+.admin-ui .ui-th {
+  background-color: rgb(var(--surface-soft));
+  font-size: 0.6875rem;
+  letter-spacing: 0.06em;
+  color: rgb(var(--text-muted));
+}
+.admin-ui .ui-td {
+  border-color: rgb(var(--border) / 0.75);
+}
+.admin-ui .ui-tr:hover {
+  background-color: rgb(var(--text) / 0.025);
+}
+.admin-ui tbody .ui-tr:last-child > .ui-td {
+  border-bottom-color: transparent;
+}
+
+/* Empty state */
+.admin-ui .ui-empty-icon {
+  background-color: rgb(var(--text) / 0.05);
+  color: rgb(var(--text-muted));
+}
+
+/* Alerts */
+.admin-ui .ui-alert {
+  border-radius: var(--radius-card-sm);
+}
+
+/* Dialogs and drawers: solid, with a dim and blurred scrim */
+.admin-ui .ui-scrim {
+  background-color: rgb(var(--shadow-ink) / 0.32);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+.admin-ui .ui-dialog {
+  box-shadow: var(--shadow-lg);
+  border: 1px solid rgb(var(--border) / 0.8);
+}
+@media (min-width: 640px) {
+  .admin-ui .ui-dialog {
+    border-radius: 20px;
+  }
+}
+
+/* Menus */
+.admin-ui .ui-menu {
+  /* A touch more opaque than the recipe: menus sit over dense text. */
+  background: rgb(var(--glass-tint) / 0.93);
+  -webkit-backdrop-filter: blur(18px) saturate(180%);
+  backdrop-filter: blur(18px) saturate(180%);
+  border: 1px solid rgb(var(--border) / 0.9);
+  box-shadow: var(--shadow-lg);
+  border-radius: var(--radius-menu);
+}
+.admin-ui .ui-menu-item {
+  min-height: 2.25rem;
+  border-radius: 10px;
+}
+
+/* Toasts */
+.admin-ui .ui-toast {
+  border-radius: var(--radius-card-sm);
+  box-shadow: var(--shadow-lg);
+}
+
+/* Switch knob stays white in both themes. */
+.admin-ui .ui-switch-knob {
+  background-color: #fff;
+}
+
+/* Long content never breaks a layout. */
+.admin-ui code {
+  overflow-wrap: anywhere;
+}
+
+/* Motion */
+@media (prefers-reduced-motion: reduce) {
+  .admin-ui .admin-content,
+  .admin-ui .ui-stat {
+    transition: none;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   5. Dark mode — `data-admin-theme="dark"` on <html>, applied before paint
+      by the admin layout's inline script. Scoped to `.admin-ui`, so it can
+      never reach the public website.
+   --------------------------------------------------------------------------- */
+
+:root[data-admin-theme='dark'] .admin-ui {
+  color-scheme: dark;
+  --text: 236 237 240;
+  --text-muted: 156 163 175;
+  --border: 46 51 61;
+  --surface: 26 29 35;
+  --surface-soft: 32 36 43;
+  --workspace-bg: 14 16 20;
+  --primary: 245 245 247;
+  --primary-fg: 17 17 17;
+  --nav-fg: 236 237 240;
+  --nav-hover: rgb(255 255 255 / 0.06);
+  --nav-active: rgb(255 255 255 / 0.08);
+  --nav-guide: rgb(255 255 255 / 0.1);
+  --glass-tint: 30 33 40;
+  --shadow-ink: 0 0 0;
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4), 0 1px 3px rgb(0 0 0 / 0.3);
+  --shadow-md: 0 2px 6px rgb(0 0 0 / 0.35), 0 10px 28px rgb(0 0 0 / 0.4);
+  --shadow-lg: 0 6px 16px rgb(0 0 0 / 0.4), 0 28px 64px rgb(0 0 0 / 0.55);
+}
+:root[data-admin-theme='dark'] .admin-ui :is(.glass-bar, .glass-rail, .glass-card, .glass-panel) {
+  border-color: rgb(255 255 255 / 0.08);
+}
+:root[data-admin-theme='dark'] .admin-ui :is(.glass-bar, .glass-rail, .glass-card, .glass-panel, .glass-menu, .ui-menu) {
+  box-shadow:
+    var(--shadow-md),
+    inset 0 1px 0 rgb(255 255 255 / 0.05);
+}
+:root[data-admin-theme='dark'] .admin-ui .ambient {
+  opacity: 0.7;
+}
+:root[data-admin-theme='dark'] .admin-ui .logo-light {
+  display: none;
+}
+:root[data-admin-theme='dark'] .admin-ui .logo-dark {
+  display: block;
+}
+:root[data-admin-theme='dark'] .admin-ui .ui-btn--primary {
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.4);
+}
+:root[data-admin-theme='dark'] .admin-ui ::selection {
+  background-color: rgb(var(--accent) / 0.35);
+}
+
+/* Hard-coded white surfaces follow the theme (switch knobs and previews of the
+   public site excepted). */
+:root[data-admin-theme='dark'] .admin-ui .bg-white:not(.ui-switch-knob):not(.ui-keep-white) {
+  background-color: rgb(var(--surface));
+}
+:root[data-admin-theme='dark'] .admin-ui [class*=' bg-white/']:not(.ui-keep-white),
+:root[data-admin-theme='dark'] .admin-ui [class^='bg-white/']:not(.ui-keep-white) {
+  background-color: rgb(var(--surface) / 0.7);
+}
+:root[data-admin-theme='dark'] .admin-ui .ui-keep-white,
+:root[data-admin-theme='dark'] .admin-ui iframe {
+  color-scheme: light;
+}
+
+/* Tinted status utilities: soft tint backgrounds and readable text. */
+:root[data-admin-theme='dark'] .admin-ui :is(.bg-red-50, .bg-red-100, [class*=' bg-red-50/'], [class*=' bg-red-100/']) { background-color: rgb(239 68 68 / 0.14); }
+:root[data-admin-theme='dark'] .admin-ui :is(.bg-rose-50, .bg-rose-100, [class*=' bg-rose-50/'], [class*=' bg-rose-100/']) { background-color: rgb(244 63 94 / 0.14); }
+:root[data-admin-theme='dark'] .admin-ui :is(.bg-amber-50, .bg-amber-100, [class*=' bg-amber-50/'], [class*=' bg-amber-100/']) { background-color: rgb(245 158 11 / 0.14); }
+:root[data-admin-theme='dark'] .admin-ui :is(.bg-emerald-50, .bg-emerald-100, [class*=' bg-emerald-50/'], [class*=' bg-emerald-100/']) { background-color: rgb(16 185 129 / 0.14); }
+:root[data-admin-theme='dark'] .admin-ui :is(.bg-sky-50, .bg-sky-100, [class*=' bg-sky-50/'], [class*=' bg-sky-100/']) { background-color: rgb(14 165 233 / 0.14); }
+:root[data-admin-theme='dark'] .admin-ui :is(.bg-teal-50, .bg-teal-100, [class*=' bg-teal-50/'], [class*=' bg-teal-100/']) { background-color: rgb(20 184 166 / 0.14); }
+:root[data-admin-theme='dark'] .admin-ui :is(.bg-violet-50, .bg-violet-100, [class*=' bg-violet-50/'], [class*=' bg-violet-100/']) { background-color: rgb(139 92 246 / 0.14); }
+
+:root[data-admin-theme='dark'] .admin-ui .text-red-600 { color: rgb(248 113 113); }
+:root[data-admin-theme='dark'] .admin-ui .text-rose-600 { color: rgb(251 113 133); }
+:root[data-admin-theme='dark'] .admin-ui .text-amber-600 { color: rgb(251 191 36); }
+:root[data-admin-theme='dark'] .admin-ui .text-emerald-600 { color: rgb(52 211 153); }
+:root[data-admin-theme='dark'] .admin-ui .text-sky-600 { color: rgb(56 189 248); }
+:root[data-admin-theme='dark'] .admin-ui .text-teal-600 { color: rgb(45 212 191); }
+:root[data-admin-theme='dark'] .admin-ui .text-violet-600 { color: rgb(167 139 250); }
+:root[data-admin-theme='dark'] .admin-ui :is(.text-red-700, .text-red-800, .text-red-900, .text-red-950) { color: rgb(252 165 165); }
+:root[data-admin-theme='dark'] .admin-ui :is(.text-rose-700, .text-rose-800, .text-rose-900, .text-rose-950) { color: rgb(253 164 175); }
+:root[data-admin-theme='dark'] .admin-ui :is(.text-amber-700, .text-amber-800, .text-amber-900, .text-amber-950) { color: rgb(252 211 77); }
+:root[data-admin-theme='dark'] .admin-ui :is(.text-emerald-700, .text-emerald-800, .text-emerald-900, .text-emerald-950) { color: rgb(110 231 183); }
+:root[data-admin-theme='dark'] .admin-ui :is(.text-sky-700, .text-sky-800, .text-sky-900, .text-sky-950) { color: rgb(125 211 252); }
+:root[data-admin-theme='dark'] .admin-ui :is(.text-teal-700, .text-teal-800, .text-teal-900, .text-teal-950) { color: rgb(94 234 212); }
+:root[data-admin-theme='dark'] .admin-ui :is(.text-violet-700, .text-violet-800, .text-violet-900, .text-violet-950) { color: rgb(196 181 253); }
+
+:root[data-admin-theme='dark'] .admin-ui :is(.border-red-200, .border-red-300) { border-color: rgb(239 68 68 / 0.35); }
+:root[data-admin-theme='dark'] .admin-ui :is(.border-amber-200, .border-amber-300) { border-color: rgb(245 158 11 / 0.35); }
+:root[data-admin-theme='dark'] .admin-ui :is(.border-emerald-200, .border-emerald-300) { border-color: rgb(16 185 129 / 0.35); }
+:root[data-admin-theme='dark'] .admin-ui :is(.border-sky-200, .border-sky-300) { border-color: rgb(14 165 233 / 0.35); }
+
+/* Status ring tints stay visible on dark surfaces. */
+:root[data-admin-theme='dark'] .admin-ui .ui-badge {
+  --tw-ring-opacity: 1;
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.08);
+}
+
+/* Alerts carry their tone icon in the admin. */
+.admin-ui .ui-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+}
+.admin-ui .ui-alert-icon {
+  display: block;
+  margin-top: 0.125rem;
+}
+.admin-ui .ui-alert-body {
+  flex: 1 1 auto;
+}
+
+/* Side drawers: a solid panel with a soft left edge. */
+.admin-ui .ui-drawer {
+  box-shadow: var(--shadow-lg);
+  border-left: 1px solid rgb(var(--border) / 0.8);
+}
+@media (min-width: 640px) {
+  .admin-ui .ui-drawer {
+    border-top-left-radius: 20px;
+    border-bottom-left-radius: 20px;
+  }
+}
+
+/* A horizontal scroller is the containing block for what it holds, so an
+   absolutely positioned child (an sr-only label in a table cell) is clipped
+   with it instead of widening the page. */
+.admin-ui .scroll-x {
+  position: relative;
+}
+
+/* The off-canvas drawer sits over a dimmed page: more opaque for legibility. */
+@media (max-width: 1023px) {
+  .admin-ui .glass-rail {
+    background: rgb(var(--glass-tint) / 0.95);
+  }
+}

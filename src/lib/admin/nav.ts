@@ -45,6 +45,8 @@ export type AdminNavModule = {
   exact?: boolean;
   permission?: PermissionKey | PermissionKey[];
   items?: AdminNavItem[];
+  /** The sidebar section heading this module sits under. */
+  section?: string;
 };
 
 export const ADMIN_NAV: AdminNavModule[] = [
@@ -58,6 +60,7 @@ export const ADMIN_NAV: AdminNavModule[] = [
   },
   {
     id: 'website',
+    section: 'Website',
     label: 'Website',
     icon: 'layout',
     items: [
@@ -74,6 +77,12 @@ export const ADMIN_NAV: AdminNavModule[] = [
         permission: 'pages.view',
         description: 'Group pages into a nested structure',
         exact: true,
+      },
+      {
+        label: 'Cities',
+        href: '/admin/cities',
+        permission: 'cities.view',
+        description: 'Local landing pages for each city a market serves',
       },
       {
         label: 'Navigation',
@@ -109,6 +118,7 @@ export const ADMIN_NAV: AdminNavModule[] = [
   },
   {
     id: 'products',
+    section: 'Catalogue',
     label: 'Products',
     icon: 'package',
     items: [
@@ -159,6 +169,7 @@ export const ADMIN_NAV: AdminNavModule[] = [
   },
   {
     id: 'crm',
+    section: 'Customers',
     label: 'Leads & CRM',
     icon: 'inbox',
     items: [
@@ -209,6 +220,7 @@ export const ADMIN_NAV: AdminNavModule[] = [
   },
   {
     id: 'content',
+    section: 'Content',
     label: 'Content & SEO',
     icon: 'file',
     items: [
@@ -256,6 +268,12 @@ export const ADMIN_NAV: AdminNavModule[] = [
         description: 'Titles, social sharing and indexing',
       },
       {
+        label: 'SEO Intelligence',
+        href: '/admin/seo-intelligence',
+        permission: 'seo.manage',
+        description: 'SEO, AEO and GEO scores with the reasons behind them',
+      },
+      {
         label: 'Slug & URL Manager',
         href: '/admin/slug-manager',
         permission: 'seo.manage',
@@ -271,6 +289,7 @@ export const ADMIN_NAV: AdminNavModule[] = [
   },
   {
     id: 'marketing',
+    section: 'Growth',
     label: 'Marketing',
     icon: 'megaphone',
     items: [
@@ -309,6 +328,7 @@ export const ADMIN_NAV: AdminNavModule[] = [
   },
   {
     id: 'reports',
+    section: 'Growth',
     label: 'Reports',
     icon: 'chart',
     items: [
@@ -329,6 +349,7 @@ export const ADMIN_NAV: AdminNavModule[] = [
   },
   {
     id: 'settings',
+    section: 'Admin',
     label: 'Settings',
     icon: 'settings',
     items: [

@@ -8,6 +8,83 @@ This project uses [semantic versioning](https://semver.org): MAJOR.MINOR.PATCH.
 
 ---
 
+## [1.6.0] — 2026-10-13
+
+### Added
+
+- **Manual Pricing Comparison** page section (Content group): pricing cards
+  written entirely in the CMS — plans, prices, badges, feature lists and
+  buttons — with no products involved. Any number of plans can be
+  highlighted; every card, row and button can be styled individually; layout
+  controls cover columns per breakpoint, equal widths or spans, gaps, card
+  height and the card area's width. Defaults match the supplied reference
+  design. See [docs/MANUAL-PRICING.md](docs/MANUAL-PRICING.md).
+- CMS repeaters can **duplicate** a row, and repeaters that need it give
+  every row a stable id that survives reordering.
+
+## [1.5.0] — 2026-10-05
+
+### Changed
+
+- **Admin redesign — "Liquid Glass".** A floating glass sidebar (section
+  headings, collapse toggle beside the logo, 76px icon rail with tooltips and
+  fly-outs, no footer, a drawer on phones) and a floating glass topbar
+  (breadcrumbs, ⌘K search, Create, theme toggle, View website, profile menu).
+  Near-black primary actions with the brand colour as the accent, calmer
+  type, glass KPI tiles and filter strip, solid tables and forms, and a
+  dashboard with glass panels over an ambient wash. Form and settings screens
+  are left-aligned so the title sits in the same place everywhere.
+- Scoped entirely to the admin (`.admin-ui`); the public website is
+  pixel-identical.
+
+### Added
+
+- **Light / Dark / System themes** for the admin, remembered per browser,
+  applied before first paint (no flash), with System following the OS live.
+- KPI tiles accept a trend chip (arrow and sign, `invertTrend` for metrics
+  where up is bad) and a sparkline.
+
+### Fixed
+
+- Screen-reader labels inside horizontally scrolling admin tables could widen
+  the page on phones.
+
+## [1.4.0] — 2026-09-30
+
+### Added
+
+- **Cities** (Website → Cities). A city belongs to a market and gets a landing
+  page at `/<slug>` in that market (`/delhi`, `/ae/dubai`) — an ordinary CMS
+  page built in the page builder, addressed by the URL registry and listed in
+  the sitemap. Region is optional. Suggested title, H1, description and three
+  keywords are generated from the city name and stay fully editable; a template
+  page can be copied once with `{{city}}` filled in. Pages are independent after
+  creation.
+- **City product landing pages** (`/delhi/adobe-acrobat-pro`) for products the
+  market sells, one per city and product. Prices are read live from
+  Product/ProductCountry; nothing is copied.
+- **Primary keywords** — up to three on pages, products and each product's
+  market, emitted as meta keywords.
+- **SEO Intelligence** (Content & SEO → SEO Intelligence): SEO, AEO, GEO and
+  overall scores (50/25/25) per page, product, city page, blog post and market,
+  with local SEO checks and doorway-page warnings for city pages. Every point
+  lost is explained. Scores are internal heuristics, stored in `SeoAnalysis`,
+  refreshed on save and by **Recalculate all**. Editors show a compact
+  SEO · AEO · GEO card.
+- City pages emit `Home → City (→ Product)` breadcrumbs and a `Service` schema
+  with the city as `areaServed`.
+
+### Changed
+
+- Changing a city's slug moves its pages with permanent redirects through the
+  URL registry; renaming a city's landing page moves the city.
+
+### Migration
+
+- `20261001100000_cities_seo_intelligence` — `City`, `CityProductPage`,
+  `SeoAnalysis`, `primaryKeywords` on Page/Product/ProductCountry, and the
+  `cities.view`/`cities.manage` permissions. Additive only.
+
 ## [1.3.0] — 2026-09-30
 
 ### Added

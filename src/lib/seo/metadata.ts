@@ -37,6 +37,8 @@ export type SeoInput = {
    */
   alternateCountryIds?: readonly string[];
   canonicalUrl?: string | null;
+  /** The content's primary keywords, emitted as meta keywords. */
+  keywords?: readonly string[] | null;
   noIndex?: boolean;
   noFollow?: boolean;
   ogTitle?: string | null;
@@ -140,6 +142,7 @@ export async function buildMetadata(input: SeoInput): Promise<Metadata> {
      */
     title: { absolute: title },
     description,
+    ...(input.keywords?.length ? { keywords: [...input.keywords] } : {}),
     alternates: {
       canonical,
       ...(Object.keys(languages).length > 0 ? { languages } : {}),

@@ -4,6 +4,7 @@ import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { prisma } from '@/lib/db/prisma';
+import { queueSeoAnalysis } from '@/lib/seo-intelligence/queue';
 import { authorize, authorizeSelf } from '@/lib/auth/guards';
 import { recordAudit } from '@/lib/services/audit';
 import { sanitizeText } from '@/lib/utils/sanitize';
@@ -457,6 +458,7 @@ export async function saveProductCountry(formData: FormData): Promise<ActionResu
     revalidatePath(`/admin/products/${productId}`);
     revalidateCountryPage(country, `products/${product.slug}`);
     await syncContentRoutes({ kind: 'product', ids: [productId] }, actorOf(user), 'renamed');
+    queueSeoAnalysis([{ kind: 'product', id: productId }]);
     return success(undefined, `${country.name} pricing saved.`);
   } catch (error) {
     return toActionError(error);

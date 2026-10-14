@@ -17,6 +17,7 @@ import { assertCountryAccess } from '@/lib/country/access';
 import { getCountryById, listActiveCountries } from '@/lib/country/registry';
 import { revalidateCountryBlog, revalidateAllCountryBlogs } from '@/lib/country/revalidate';
 import { syncContentRoutes, checkSlugAvailability, isAddressTaken, actorOf } from '@/lib/urls/registry';
+import { queueSeoAnalysis } from '@/lib/seo-intelligence/queue';
 
 /** Revalidates a market's blog surfaces. */
 async function revalidatePost(countryId: string, slug?: string | null) {
@@ -249,6 +250,7 @@ export async function updateBlogPost(postId: string, formData: FormData): Promis
     await revalidatePost(before.countryId, before.slug);
     if (slug !== before.slug) await revalidatePost(before.countryId, slug);
     await syncContentRoutes({ kind: 'post', ids: [postId] }, actorOf(user), 'renamed');
+    queueSeoAnalysis([{ kind: 'post', id: postId }]);
     return success(undefined, 'Post saved.');
   } catch (error) {
     return toActionError(error);
@@ -517,6 +519,7 @@ export async function deleteBlogPost(postId: string): Promise<ActionResult> {
     revalidatePath('/admin/blog');
     await revalidatePost(post.countryId, post.slug);
     await syncContentRoutes({ kind: 'post', ids: [postId] }, actorOf(user), 'deleted');
+    queueSeoAnalysis([{ kind: 'post', id: postId }]);
     return success(undefined, 'Post deleted.');
   } catch (error) {
     return toActionError(error);

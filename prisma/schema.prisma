@@ -339,6 +339,7 @@ model Country {
   consentRecords       ConsentRecord[]
   urlRoutes            UrlRoute[]
   urlPatterns          UrlPattern[]
+  cities               City[]
   syncMappingsAsSource CountrySyncMapping[]     @relation("SyncSource")
   syncMappingsAsTarget CountrySyncMapping[]     @relation("SyncTarget")
   syncRunsAsSource     CountrySyncRun[]         @relation("SyncRunSource")
@@ -721,16 +722,19 @@ model Page {
 
   // SEO (entity overrides global defaults)
   seoTitle           String?
-  seoDescription     String? @db.Text
+  seoDescription     String?  @db.Text
   canonicalUrl       String?
-  noIndex            Boolean @default(false)
-  noFollow           Boolean @default(false)
+  noIndex            Boolean  @default(false)
+  noFollow           Boolean  @default(false)
   ogTitle            String?
-  ogDescription      String? @db.Text
+  ogDescription      String?  @db.Text
   ogImageId          String?
   twitterTitle       String?
-  twitterDescription String? @db.Text
+  twitterDescription String?  @db.Text
   twitterImageId     String?
+  /// Up to three phrases this page is written to rank for. Read by SEO
+  /// Intelligence and emitted as meta keywords.
+  primaryKeywords    String[] @default([])
 
   createdById String?
   updatedById String?
@@ -747,6 +751,10 @@ model Page {
   leads           Lead[]            @relation("LeadLandingPage")
   popups          PopupPageTarget[]
   navigationItems NavigationItem[]
+  /// Set when this page is a city's landing page.
+  city            City?
+  /// Set when this page is a city's landing page for one product.
+  cityProduct     CityProductPage?
 
   @@unique([countryId, slug])
   @@unique([countryId, taxonomyKind, taxonomyId])
@@ -949,11 +957,13 @@ model Product {
   brandId    String?
 
   // SEO
-  seoTitle       String?
-  seoDescription String? @db.Text
-  canonicalUrl   String?
-  noIndex        Boolean @default(false)
-  ogImageId      String?
+  seoTitle        String?
+  seoDescription  String?  @db.Text
+  canonicalUrl    String?
+  noIndex         Boolean  @default(false)
+  ogImageId       String?
+  /// Up to three phrases, for every market that sets none of its own.
+  primaryKeywords String[] @default([])
 
   createdById String?
   updatedById String?
@@ -977,6 +987,7 @@ model Product {
   navigationItems  NavigationItem[]
   /// This product's own page sections — its detail layout and its sidebar.
   sections         ProductSection[]
+  cityPages        CityProductPage[]
 
   @@index([slug])
   @@index([status, publishedAt])
@@ -1046,11 +1057,13 @@ model ProductCountry {
   ctaUrl    String?
   ctaFormId String?
 
-  seoTitle       String?
-  seoDescription String? @db.Text
-  canonicalUrl   String?
-  noIndex        Boolean @default(false)
-  ogImageId      String?
+  seoTitle        String?
+  seoDescription  String?  @db.Text
+  canonicalUrl    String?
+  noIndex         Boolean  @default(false)
+  ogImageId       String?
+  /// This market's own target phrases. Empty falls back to the product's.
+  primaryKeywords String[] @default([])
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -2887,4 +2900,105 @@ model CustomEmail {
   updatedAt   DateTime  @updatedAt
 
   @@index([createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// Cities (local SEO)
+// ---------------------------------------------------------------------------
+
+/// A city a market serves, with a landing page at "/<slug>" in that market.
+///
+/// The landing page is an ordinary CMS `Page` — built in the page builder,
+/// addressed through the URL registry, listed in the sitemap — so a city adds
+/// no second page engine, routing table or sitemap. The city only records
+/// which page is its landing page and which pages are its product pages.
+model City {
+  id        String  @id @default(cuid())
+  countryId String
+  name      String
+  /// The first segment of the landing page's slug. Unique per market.
+  slug      String
+  /// State, province, emirate… Optional in every market.
+  region    String?
+  isActive  Boolean @default(true)
+  sortOrder Int     @default(0)
+  /// The landing page. Null until one is created, or after it is deleted.
+  pageId    String? @unique
+
+  createdById String?
+  updatedById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  country      Country           @relation(fields: [countryId], references: [id], onDelete: Restrict)
+  page         Page?             @relation(fields: [pageId], references: [id], onDelete: SetNull)
+  productPages CityProductPage[]
+
+  @@unique([countryId, slug])
+  @@index([countryId, isActive, sortOrder])
+}
+
+/// A city's landing page for one product: "/delhi/adobe-acrobat-pro".
+///
+/// Only the relation. Content lives in the page; prices are read live from
+/// Product and ProductCountry, never copied here.
+model CityProductPage {
+  id        String   @id @default(cuid())
+  cityId    String
+  productId String
+  pageId    String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  city    City    @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  page    Page    @relation(fields: [pageId], references: [id], onDelete: Cascade)
+
+  @@unique([cityId, productId])
+  @@index([productId])
+}
+
+// ---------------------------------------------------------------------------
+// SEO Intelligence
+// ---------------------------------------------------------------------------
+
+/// The stored result of analysing one piece of content in one market.
+///
+/// Written by the analyser when content changes or on request, so the
+/// dashboard reads rows instead of scanning the site. Deliberately without
+/// foreign keys: a row for deleted content is simply removed by the next run.
+model SeoAnalysis {
+  id             String   @id @default(cuid())
+  /// SITE | PAGE | CITY_PAGE | CITY_PRODUCT_PAGE | PRODUCT | BLOG_POST
+  entityType     String
+  entityId       String
+  countryId      String
+  cityId         String?
+  label          String
+  path           String
+  status         String
+  seoScore       Int
+  aeoScore       Int
+  geoScore       Int
+  localScore     Int?
+  overallScore   Int
+  criticalCount  Int      @default(0)
+  warningCount   Int      @default(0)
+  passedCount    Int      @default(0)
+  keywords       String[] @default([])
+  /// Finding[] — see src/lib/seo-intelligence/types.ts.
+  findings       Json     @default("[]")
+  /// MinHash of the page's copy, compared with other pages for duplicates.
+  signature      Int[]    @default([])
+  titleKey       String?
+  descriptionKey String?
+  h1Key          String?
+  contentHash    String
+  analyzedAt     DateTime @default(now())
+
+  @@unique([entityType, entityId, countryId])
+  @@index([countryId, overallScore])
+  @@index([entityType])
+  @@index([cityId])
+  @@index([analyzedAt])
 }

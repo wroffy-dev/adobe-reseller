@@ -40,7 +40,7 @@ export function AdminTabs({
       role="tablist"
       aria-orientation="horizontal"
       onKeyDown={onKeyDown}
-      className={cn('scroll-x flex items-center gap-1 border-b border-hairline', className)}
+      className={cn('ui-tabs scroll-x flex items-center gap-1 border-b border-hairline', className)}
     >
       {tabs.map((tab) => {
         const selected = tab.id === active;
@@ -58,7 +58,7 @@ export function AdminTabs({
             tabIndex={selected ? 0 : -1}
             onClick={() => onChange(tab.id)}
             className={cn(
-              'relative shrink-0 whitespace-nowrap px-3 py-2.5 text-sm transition-colors',
+              'ui-tab relative shrink-0 whitespace-nowrap px-3 py-2.5 text-sm transition-colors',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-1',
               selected ? 'font-medium text-brand' : 'text-muted hover:text-content',
             )}

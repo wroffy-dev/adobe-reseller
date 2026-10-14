@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { formBoolean } from './boolean';
 import { pageSlug, slugify } from '@/lib/utils/slug';
+import { normaliseKeywords } from '@/lib/cities/defaults';
 
 export const contentStatusSchema = z.enum(['DRAFT', 'PUBLISHED', 'SCHEDULED', 'ARCHIVED']);
 
@@ -49,6 +50,12 @@ export const pageInputSchema = z
     twitterTitle: optionalString(200),
     twitterDescription: optionalString(400),
     twitterImageId: optionalString(40),
+    /** Up to three target phrases, read by SEO Intelligence and meta keywords. */
+    primaryKeywords: z
+      .array(z.string().max(120))
+      .max(10)
+      .default([])
+      .transform((values) => normaliseKeywords(values)),
   })
   .refine((data) => data.status !== 'SCHEDULED' || data.publishedAt !== null, {
     message: 'A scheduled page needs a publish date',

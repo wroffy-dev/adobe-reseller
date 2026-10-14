@@ -9,9 +9,8 @@ import { cn } from '@/lib/utils/cn';
 /**
  * Breadcrumbs derived from the navigation tree.
  *
- * Rendered only inside the admin's dark top bar, so the colours are the shell's
- * rather than the page's: muted white for the trail, full white for the page
- * you are on.
+ * Rendered inside the admin's top bar, so the colours are the shell's rather
+ * than the page's: a muted trail, the page you are on in full strength.
  *
  * Because the trail comes from ADMIN_NAV, a page never has to restate where it
  * lives — moving an item between modules updates every breadcrumb for free.
@@ -36,11 +35,11 @@ export function AdminBreadcrumbs({ leaf, className }: { leaf?: string; className
 
   return (
     <nav aria-label="Breadcrumb" className={cn('min-w-0', className)}>
-      <ol className="flex flex-wrap items-center gap-1.5 text-xs text-admin-nav/60">
+      <ol className="flex flex-wrap items-center gap-1.5 text-[0.8125rem] text-admin-nav/55">
         <li>
           <Link
             href="/admin"
-            className="admin-focus admin-focus-header rounded transition-colors hover:text-admin-nav"
+            className="admin-focus rounded transition-colors hover:text-admin-nav"
           >
             Admin
           </Link>
@@ -53,7 +52,7 @@ export function AdminBreadcrumbs({ leaf, className }: { leaf?: string; className
               {crumb.href && !last ? (
                 <Link
                   href={crumb.href}
-                  className="admin-focus admin-focus-header truncate rounded transition-colors hover:text-admin-nav"
+                  className="admin-focus truncate rounded transition-colors hover:text-admin-nav"
                 >
                   {crumb.label}
                 </Link>
