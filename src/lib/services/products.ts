@@ -277,6 +277,25 @@ export const selectProducts = cache(
   },
 );
 
+/**
+ * Published products by id, for one market, keyed by id. Unlike the "selected"
+ * source of `selectProducts`, which shows a handful of cards, this serves a
+ * grid of up to a hundred tiles, so it is not capped at 24. A product that is
+ * not on sale in the market is simply absent from the map.
+ */
+export const getPublicProductsByIds = cache(
+  async (country: CountryContext, ids: string[]): Promise<Map<string, PublicProduct>> => {
+    const unique = [...new Set(ids.filter(Boolean))].slice(0, 200);
+    if (unique.length === 0) return new Map();
+    await loadLinks();
+    const rows = await prisma.productCountry.findMany({
+      where: { ...publishedProductWhere(country.id), productId: { in: unique } },
+      select: countrySelect,
+    });
+    return new Map(rows.map((row) => [row.product.id, toPublicProduct(row, country)]));
+  },
+);
+
 export const getPublicProduct = cache(
   async (country: CountryContext, slug: string): Promise<PublicProduct | null> => {
     const row = await prisma.productCountry.findFirst({

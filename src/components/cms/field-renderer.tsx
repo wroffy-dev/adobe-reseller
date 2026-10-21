@@ -1,14 +1,15 @@
 'use client';
 
 import * as React from 'react';
-import { Plus, Trash, ChevronDown, GripVertical, Copy } from 'lucide-react';
+import { Plus, Trash, ChevronDown, GripVertical, Copy, PackagePlus } from 'lucide-react';
 import type { FieldDescriptor } from '@/lib/cms/fields';
 import { isFieldVisible, readFieldPath, writeFieldPath } from '@/lib/cms/fields';
 import { Field, Input, Textarea, Select, Switch, Label } from '@/components/ui/field';
 import { Button } from '@/components/ui/button';
 import { MediaPicker } from '@/components/admin/media-picker';
 import { RichTextEditor } from './rich-text-editor';
-import { ProductMultiSelect } from './product-select';
+import { ProductMultiSelect, ProductSelect } from './product-select';
+import { listProductsForImport } from '@/lib/actions/pickers';
 import { FormSelect } from './form-select';
 import { IconSelect } from './icon-select';
 import { CategorySelect, BrandSelect } from './taxonomy-select';
@@ -206,6 +207,17 @@ function FieldControl({
         </Field>
       );
 
+    case 'product':
+      return (
+        <Field label={field.label} htmlFor={id} hint={field.help}>
+          <ProductSelect
+            id={id}
+            value={typeof value === 'string' && value ? value : null}
+            onChange={onChange}
+          />
+        </Field>
+      );
+
     case 'productCategory':
       return (
         <Field label={field.label} htmlFor={id} hint={field.help}>
@@ -361,8 +373,8 @@ function Repeater({
     onChange(isPrimitive ? next.map((item) => String(item.value ?? '')) : next);
   };
 
-  const add = () => {
-    if (field.max && items.length >= field.max) return;
+  /** A new row: each field at its default, and its own id when rows carry one. */
+  const blankItem = (): FieldValues => {
     const blank: FieldValues = {};
     for (const sub of field.fields) {
       if (sub.defaultValue !== undefined) {
@@ -373,6 +385,7 @@ function Repeater({
         sub.kind === 'boolean'
           ? false
           : sub.kind === 'media' ||
+              sub.kind === 'product' ||
               sub.kind === 'productCategory' ||
               sub.kind === 'brand' ||
               sub.kind === 'blogCategory' ||
@@ -388,8 +401,59 @@ function Repeater({
               : '';
     }
     if (field.identity) blank.id = newItemId();
-    commit([...items, blank]);
+    return blank;
+  };
+
+  const add = () => {
+    if (field.max && items.length >= field.max) return;
+    commit([...items, blankItem()]);
     setOpenIndex(items.length);
+  };
+
+  const [importing, setImporting] = React.useState(false);
+  const [importNote, setImportNote] = React.useState<string | null>(null);
+
+  /**
+   * Fills the list from the repeater's importer in one go. Rows already in the
+   * list are left exactly as they are — their names and styles may have been
+   * edited — and only what is missing is added, up to the repeater's limit.
+   */
+  const importAll = async () => {
+    if (field.importer !== 'products') return;
+    setImporting(true);
+    setImportNote(null);
+    try {
+      const rows = await listProductsForImport();
+      const present = new Set(items.map((item) => item.productId).filter(Boolean));
+      const missing = rows.filter((row) => !present.has(row.productId));
+      const room = field.max ? Math.max(field.max - items.length, 0) : missing.length;
+      const added = missing.slice(0, room).map((row) => ({ ...blankItem(), productId: row.productId, name: row.name }));
+      if (added.length > 0) {
+        commit([...items, ...added]);
+        setOpenIndex(null);
+      }
+      setImportNote(
+        rows.length === 0
+          ? 'No products found in this market.'
+          : added.length === 0
+            ? missing.length > 0
+              ? `The list is full (${field.max} at most).`
+              : 'Every product is already in the list.'
+            : `Added ${added.length} product${added.length === 1 ? '' : 's'}${missing.length > added.length ? ` — ${missing.length - added.length} more did not fit (${field.max} at most)` : ''}. Save the section to keep them.`,
+      );
+    } catch {
+      setImportNote('Products could not be loaded. Try again.');
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  const removeAll = () => {
+    if (items.length === 0) return;
+    if (!window.confirm(`Remove all ${items.length} ${field.itemLabel.toLowerCase()}s from this list?`)) return;
+    commit([]);
+    setOpenIndex(null);
+    setImportNote(null);
   };
 
   /** A copy placed right after the original; with identity, every id is new. */
@@ -525,16 +589,39 @@ function Repeater({
         </ul>
       )}
 
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={add}
-        className="mt-3"
-        disabled={Boolean(field.max && items.length >= field.max)}
-      >
-        <Plus className="h-4 w-4" aria-hidden="true" />
-        Add {field.itemLabel.toLowerCase()}
-      </Button>
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={add}
+          disabled={Boolean(field.max && items.length >= field.max)}
+        >
+          <Plus className="h-4 w-4" aria-hidden="true" />
+          Add {field.itemLabel.toLowerCase()}
+        </Button>
+        {field.importer === 'products' ? (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={importAll}
+            disabled={importing || Boolean(field.max && items.length >= field.max)}
+          >
+            <PackagePlus className="h-4 w-4" aria-hidden="true" />
+            {importing ? 'Loading products…' : 'Add all products'}
+          </Button>
+        ) : null}
+        {field.importer && items.length > 1 ? (
+          <Button variant="ghost" size="sm" onClick={removeAll}>
+            <Trash className="h-4 w-4" aria-hidden="true" />
+            Remove all
+          </Button>
+        ) : null}
+      </div>
+      {importNote ? (
+        <p className="mt-2 text-xs text-muted" role="status">
+          {importNote}
+        </p>
+      ) : null}
     </fieldset>
   );
 }

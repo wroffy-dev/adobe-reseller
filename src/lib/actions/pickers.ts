@@ -34,6 +34,30 @@ export async function listProductOptions(): Promise<PickerOption[]> {
   }));
 }
 
+export type ProductImportRow = { productId: string; name: string };
+
+/**
+ * Every product the admin's market carries, in its catalogue order — what the
+ * Product Showcase's "Add all products" button fills the grid with. Requires
+ * products.view, like every product picker.
+ *
+ * Only the id and name are copied into the section: the image and the link are
+ * read from the product when the page renders, so they stay current.
+ */
+export async function listProductsForImport(): Promise<ProductImportRow[]> {
+  const user = await getCurrentUser();
+  if (!user || !userCan(user, 'products.view')) return [];
+  const scope = await scopeForUser(user);
+
+  const rows = await prisma.productCountry.findMany({
+    where: { countryId: scope.country.id, deletedAt: null, product: { deletedAt: null } },
+    orderBy: [{ sortOrder: 'asc' }, { product: { name: 'asc' } }],
+    take: 200,
+    select: { product: { select: { id: true, name: true } } },
+  });
+  return rows.map((row) => ({ productId: row.product.id, name: row.product.name }));
+}
+
 export async function listFormOptions(): Promise<PickerOption[]> {
   const user = await getCurrentUser();
   if (!userCan(user, 'forms.view') && !userCan(user, 'pages.edit')) return [];

@@ -8,6 +8,23 @@ This project uses [semantic versioning](https://semver.org): MAJOR.MINOR.PATCH.
 
 ---
 
+## [1.7.0] — 2026-10-21
+
+### Added
+
+- **Product Showcase** page section (Products group), available in the Pages
+  builder and the product page layout: a grid of tiles that can be filled
+  with every product in one click (**Add all products**), tied to a product
+  one by one, or written by hand. Each tile's name, paragraph, image, badge
+  and link can be edited; images can be shown or hidden for the grid or per
+  tile. Five styles (tile, card, list, chip, minimal), columns per
+  breakpoint, gaps, borders, radius, shadow, colours and hover effects are
+  all set from the editor. Tiles follow their product's name, image and page
+  in each market and drop out where it is not sold. See
+  [docs/PRODUCT-SHOWCASE.md](docs/PRODUCT-SHOWCASE.md).
+- CMS repeaters can import every product (**Add all products**) and clear
+  every row (**Remove all**).
+
 ## [1.6.0] — 2026-10-13
 
 ### Added

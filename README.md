@@ -37,6 +37,7 @@ information.
 - [Slug & URL Manager](docs/URL-MANAGER.md) — custom URLs, patterns, redirects, URL health
 - [Custom emails & plan limits](docs/CUSTOM-EMAILS.md) — custom emails, plan limit, SMTP, activity emails
 - [Manual Pricing Comparison](docs/MANUAL-PRICING.md) — hand-written pricing cards section
+- [Product Showcase](docs/PRODUCT-SHOWCASE.md) — grid of products or hand-written tiles, fully styleable
 - [Admin UI](docs/ADMIN-UI.md) — Liquid Glass admin design system, Light/Dark/System themes
 - [Cities & SEO Intelligence](docs/CITIES-AND-SEO-INTELLIGENCE.md) — local landing pages, primary keywords, SEO/AEO/GEO scores
 - [Versioning and releases](VERSION_README.md)

@@ -17,6 +17,7 @@ import { BLOG_BLOCKS } from './blog-blocks';
 import { PRODUCT_BLOCKS } from './product-blocks';
 import { SLIDER_BLOCKS } from './slider-blocks';
 import { PRICING_BLOCKS } from './pricing-blocks';
+import { SHOWCASE_BLOCKS } from './showcase-blocks';
 import { productSourceFields } from './product-source';
 import { formStyleField, formStyleGroups, FORM_PICKER_HELP } from './form-style';
 
@@ -1850,6 +1851,7 @@ const PAGE_BLOCKS: Record<string, BlockDefinition> = {
 export const BLOCKS: Record<string, BlockDefinition> = {
   ...PAGE_BLOCKS,
   ...PRICING_BLOCKS,
+  ...SHOWCASE_BLOCKS,
   ...SLIDER_BLOCKS,
   ...BLOG_BLOCKS,
   ...PRODUCT_BLOCKS,

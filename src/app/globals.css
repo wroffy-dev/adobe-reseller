@@ -549,6 +549,196 @@
     .mpt-card, .mpt-btn { transition: none; }
   }
 
+  /*
+    Product Showcase. Five styles share one tile; a style sets its own look
+    through the same variables an administrator overrides, so a colour or size
+    set in the section always wins and an unset one keeps the style's.
+  */
+  .psc-grid {
+    display: grid;
+    width: 100%;
+    max-width: var(--psc-max-w, none);
+    grid-template-columns: repeat(var(--grid-cols, 5), minmax(0, 1fr));
+    column-gap: var(--psc-col-gap, var(--sec-col-gap, var(--sec-card-gap, 1.25rem)));
+    row-gap: var(--psc-row-gap, var(--sec-row-gap, var(--sec-card-gap, 1.25rem)));
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .psc-item { display: flex; min-width: 0; }
+  .psc-grid:not(.psc-grid--equal) .psc-item { align-items: flex-start; }
+  .psc-tile {
+    --_accent: var(--psc-accent, rgb(var(--brand-primary)));
+    position: relative;
+    display: flex;
+    width: 100%;
+    min-width: 0;
+    min-height: var(--psc-min-h, 0);
+    flex-direction: column;
+    align-items: var(--_items, center);
+    justify-content: center;
+    gap: 0.75rem;
+    text-align: var(--_text-align, center);
+    background: var(--psc-bg, var(--_bg, #fff));
+    border: var(--psc-border-w, 1px) solid var(--psc-border-color, var(--_border, rgb(var(--brand-text) / 0.09)));
+    border-radius: var(--psc-radius, var(--_radius, 14px));
+    padding: var(--psc-pad, var(--_pad, 1.25rem 1rem));
+    box-shadow: var(--psc-shadow, var(--_shadow, 0 1px 2px rgb(15 23 42 / 0.04), 0 2px 8px rgb(15 23 42 / 0.04)));
+    color: var(--psc-text, rgb(var(--brand-text) / 0.72));
+    overflow: hidden;
+    overflow-wrap: anywhere;
+    transition: transform 0.2s ease-out, box-shadow 0.2s ease-out, border-color 0.2s ease-out,
+      background-color 0.2s ease-out, color 0.2s ease-out;
+  }
+  .psc-grid--equal .psc-tile { height: 100%; }
+  .psc-align-left .psc-tile { --_items: flex-start; --_text-align: left; }
+  .psc-tile--link { cursor: pointer; text-decoration: none; }
+  .psc-tile--link:focus-visible { outline: 2px solid var(--_accent); outline-offset: 3px; }
+
+  .psc-body { display: flex; min-width: 0; flex-direction: column; gap: 0.35rem; }
+  .psc-name {
+    display: inline-flex;
+    align-items: center;
+    justify-content: var(--_items, center);
+    gap: 0.3rem;
+    color: var(--psc-name-color, rgb(var(--brand-text)));
+    font-family: var(--font-heading, inherit);
+    font-size: var(--psc-name-size, var(--_name-size, 1.0625rem));
+    font-weight: var(--psc-name-weight, var(--_name-weight, 600));
+    line-height: 1.3;
+    letter-spacing: -0.01em;
+  }
+  .psc-text { font-size: 0.875rem; line-height: 1.55; color: var(--psc-text, rgb(var(--brand-text) / 0.68)); }
+  .psc-arrow {
+    height: 1em;
+    width: 1em;
+    flex-shrink: 0;
+    color: var(--_accent);
+    opacity: 0;
+    transform: translate(-3px, 3px);
+    transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+  }
+  .psc-tile--link:hover .psc-arrow,
+  .psc-tile--link:focus-visible .psc-arrow { opacity: 1; transform: none; }
+
+  .psc-media {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: var(--psc-img-size, 56px);
+    height: var(--psc-img-size, 56px);
+    border-radius: var(--psc-img-radius, 10px);
+    overflow: hidden;
+  }
+  .psc-img { height: 100%; width: 100%; object-fit: var(--psc-img-fit, contain); }
+
+  .psc-badge {
+    position: absolute;
+    top: 0.6rem;
+    right: 0.6rem;
+    border-radius: 9999px;
+    padding: 0.15rem 0.55rem;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    line-height: 1.5;
+    background: var(--psc-badge-bg, rgb(var(--brand-primary) / 0.1));
+    color: var(--psc-badge-text, rgb(var(--brand-primary)));
+  }
+
+  /* Tile — a centred box, the reference look made a little richer. */
+  .psc--tile .psc-tile { --_pad: 1.5rem 1rem; --_name-size: 1.125rem; }
+  .psc--tile .psc-tile:not(.psc-tile--image) { min-height: var(--psc-min-h, 5.5rem); }
+
+  /* Card — the image fills the top of the card. */
+  .psc--card .psc-tile { padding: 0; --_items: stretch; justify-content: flex-start; gap: 0; }
+  .psc--card .psc-media {
+    width: 100%;
+    height: var(--psc-img-size, 140px);
+    border-radius: 0;
+    background: rgb(var(--brand-text) / 0.03);
+    padding: 1rem;
+  }
+  .psc--card .psc-body { padding: var(--psc-pad, 1rem 1.25rem 1.25rem); }
+  .psc--card.psc-align-center .psc-body { align-items: center; }
+
+  /* List — the image beside the name. */
+  .psc--list .psc-tile { flex-direction: row; --_items: center; justify-content: flex-start; text-align: left; gap: 1rem; --_pad: 1rem 1.25rem; }
+  .psc--list .psc-body { align-items: flex-start; }
+  .psc--list .psc-name { justify-content: flex-start; }
+  .psc--list .psc-media { width: var(--psc-img-size, 48px); height: var(--psc-img-size, 48px); }
+
+  /* Chip — a compact pill. */
+  .psc--chip .psc-tile {
+    flex-direction: row;
+    gap: 0.5rem;
+    --_pad: 0.55rem 1rem;
+    --_radius: 9999px;
+    --_name-size: 0.9375rem;
+    --_name-weight: 500;
+    --_shadow: none;
+  }
+  .psc--chip .psc-media { width: var(--psc-img-size, 24px); height: var(--psc-img-size, 24px); }
+  .psc--chip .psc-text, .psc--chip .psc-badge { display: none; }
+
+  /* Minimal — a text link with a line under it. */
+  .psc--minimal .psc-tile {
+    flex-direction: row;
+    justify-content: space-between;
+    --_bg: transparent;
+    --_shadow: none;
+    --_radius: 0;
+    --_pad: 0.75rem 0;
+    border-width: 0 0 var(--psc-border-w, 1px);
+    --_items: center;
+  }
+  .psc--minimal .psc-media { width: var(--psc-img-size, 28px); height: var(--psc-img-size, 28px); }
+  .psc--minimal .psc-body { flex: 1; }
+  .psc--minimal .psc-arrow { opacity: 1; transform: none; }
+
+  /* Hover effects. */
+  .psc-hover--lift .psc-tile--link:hover {
+    transform: translateY(-3px);
+    border-color: var(--psc-hover-border, rgb(var(--brand-primary) / 0.35));
+    box-shadow: 0 12px 28px rgb(15 23 42 / 0.1);
+  }
+  .psc-hover--border .psc-tile--link:hover { border-color: var(--psc-hover-border, var(--_accent)); }
+  .psc-hover--shadow .psc-tile--link:hover {
+    border-color: var(--psc-hover-border, var(--psc-border-color, rgb(var(--brand-text) / 0.09)));
+    box-shadow: 0 16px 36px rgb(15 23 42 / 0.13);
+  }
+  .psc-hover--fill .psc-tile--link:hover {
+    background: var(--psc-hover-bg, var(--_accent));
+    border-color: var(--psc-hover-bg, var(--_accent));
+  }
+  .psc-hover--fill .psc-tile--link:hover .psc-name,
+  .psc-hover--fill .psc-tile--link:hover .psc-text,
+  .psc-hover--fill .psc-tile--link:hover .psc-arrow { color: var(--psc-hover-text, #fff); }
+  .psc--minimal.psc-hover--lift .psc-tile--link:hover { transform: none; box-shadow: none; }
+  .psc--minimal .psc-tile--link:hover .psc-name { color: var(--_accent); }
+
+  /* On a dark section. */
+  .psc-inverted .psc-tile {
+    --_bg: rgb(255 255 255 / 0.06);
+    --_border: rgb(255 255 255 / 0.14);
+    --_shadow: none;
+    color: var(--psc-text, rgb(255 255 255 / 0.75));
+  }
+  .psc-inverted .psc-name { color: var(--psc-name-color, #fff); }
+  .psc-inverted .psc-text { color: var(--psc-text, rgb(255 255 255 / 0.7)); }
+
+  @media (max-width: 1023px) {
+    .psc-grid { grid-template-columns: repeat(var(--grid-cols-tablet, 3), minmax(0, 1fr)); }
+  }
+  @media (max-width: 767px) {
+    .psc-grid { grid-template-columns: repeat(var(--grid-cols-mobile, 2), minmax(0, 1fr)); }
+    .psc--tile .psc-tile { --_pad: 1.1rem 0.75rem; --_name-size: 1rem; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .psc-tile, .psc-arrow { transition: none; }
+    .psc-hover--lift .psc-tile--link:hover { transform: none; }
+  }
+
 
   /*
     A block's row of call-to-action buttons. The section's Button position

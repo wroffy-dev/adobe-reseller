@@ -140,6 +140,8 @@ import {
   ProductPriceBoxBlock,
 } from './blocks/product-detail-blocks';
 import { ManualPricingTableBlock } from './blocks/pricing-blocks';
+import { ProductShowcaseBlock } from './blocks/showcase-blocks';
+import type { ProductShowcaseContent } from '@/lib/cms/showcase-blocks';
 import type { ManualPricingTableContent } from '@/lib/cms/pricing-blocks';
 
 /**
@@ -193,6 +195,8 @@ async function BlockBody({ section, ctx }: { section: RenderableSection; ctx: Bl
       return <ProductTableBlock content={parse<ProductTableContent>()} ctx={ctx} />;
     case 'manualPricingTable':
       return <ManualPricingTableBlock content={parse<ManualPricingTableContent>()} ctx={ctx} />;
+    case 'productShowcase':
+      return <ProductShowcaseBlock content={parse<ProductShowcaseContent>()} ctx={ctx} />;
     case 'productGrid':
       return <ProductGridBlock content={parse<ProductGridContent>()} ctx={ctx} />;
     case 'faq':

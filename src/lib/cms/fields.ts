@@ -61,6 +61,8 @@ type FieldVariant =
   | { kind: 'media'; name: string; label: string; help?: string; width?: FieldWidth }
   | { kind: 'form'; name: string; label: string; help?: string; width?: FieldWidth }
   | { kind: 'products'; name: string; label: string; help?: string; width?: FieldWidth }
+  /** Single product, from the market the admin is working in; empty is null. */
+  | { kind: 'product'; name: string; label: string; help?: string; width?: FieldWidth }
   | { kind: 'productCategory'; name: string; label: string; help?: string; width?: FieldWidth }
   | { kind: 'brand'; name: string; label: string; help?: string; width?: FieldWidth }
   /** Single blog category, loaded from Blog → Categories. */
@@ -103,6 +105,12 @@ type FieldVariant =
        * row keeps its identity when rows are reordered.
        */
       identity?: boolean;
+      /**
+       * Offers a button that fills the list from a data source in one go.
+       * "products": one row per product in the admin's market, each carrying
+       * `productId` and `name`; products already in the list are skipped.
+       */
+      importer?: 'products';
     };
 
 export type FieldDescriptor = FieldVariant & {
