@@ -22,12 +22,15 @@ const optional = (max: number, pattern?: RegExp, message?: string) =>
  * Vendor IDs are validated to their documented shapes. The renderer applies the
  * same patterns again, so a malformed value can never reach a script tag.
  */
+/** Google IDs are upper-case; store them that way whatever was typed. */
+const upper = (v: string | null) => (v ? v.toUpperCase() : v);
+
 const trackingSchema = z.object({
-  ga4Id: optional(40, /^G-[A-Z0-9]{4,20}$/i, 'Google Analytics IDs look like G-XXXXXXX'),
+  ga4Id: optional(40, /^G-[A-Z0-9]{4,20}$/i, 'Google Analytics IDs look like G-XXXXXXX').transform(upper),
   ga4Enabled: z.coerce.boolean().default(false),
-  gtmId: optional(40, /^GTM-[A-Z0-9]{4,20}$/i, 'Tag Manager IDs look like GTM-XXXXXX'),
+  gtmId: optional(40, /^GTM-[A-Z0-9]{4,20}$/i, 'Tag Manager IDs look like GTM-XXXXXX').transform(upper),
   gtmEnabled: z.coerce.boolean().default(false),
-  googleAdsId: optional(40, /^AW-[0-9]{6,20}$/i, 'Google Ads IDs look like AW-123456789'),
+  googleAdsId: optional(40, /^AW-[0-9]{6,20}$/i, 'Google Ads IDs look like AW-123456789').transform(upper),
   googleAdsEnabled: z.coerce.boolean().default(false),
   googleAdsConversionLabel: optional(80),
   metaPixelId: optional(40, /^[0-9]{6,25}$/, 'Meta pixel IDs are numeric'),

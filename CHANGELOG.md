@@ -8,6 +8,26 @@ This project uses [semantic versioning](https://semver.org): MAJOR.MINOR.PATCH.
 
 ---
 
+## [1.7.1] — 2026-11-03
+
+### Fixed
+
+- **Google Tag Manager and GA4 not detected / not tracking.** Both were
+  injected with `next/script` (`afterInteractive`), which leaves them out of
+  the server HTML and runs them only after React hydrates. Tag Assistant,
+  GTM's "Test your website", GA4's "tag not detected" check and Search
+  Console verification read the page source, so they reported the tags as
+  missing; visitors who left before hydration were never counted; and the
+  404 page, which Next.js renders on the client, never sent anything. The GTM
+  and Google tag snippets (GA4 and Google Ads) are now written into `<head>`
+  of the server HTML on public pages, with GTM's `<noscript>` right after
+  `<body>`. A small client loader runs the same snippets where the `<head>`
+  copy cannot run (the 404 page, arriving from the admin by client-side
+  navigation, the page after accepting the consent banner). Each snippet
+  records itself on `window`, so gtm.js loads once and GA4 sends one
+  page_view. Google IDs are stored and emitted upper-case. `/seed-files` is
+  treated as a private path.
+
 ## [1.7.0] — 2026-10-21
 
 ### Added

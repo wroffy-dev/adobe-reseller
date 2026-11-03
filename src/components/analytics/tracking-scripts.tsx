@@ -1,5 +1,6 @@
 import Script from 'next/script';
 import type { ScriptPlacement, TrackingScript, TrackingSettings } from '@prisma/client';
+import { ID_PATTERNS, sanitizeId } from '@/lib/analytics/google-tags';
 
 /**
  * Renders the tracking configured in Admin → Marketing.
@@ -7,21 +8,10 @@ import type { ScriptPlacement, TrackingScript, TrackingSettings } from '@prisma/
  * Vendor tags are emitted from fixed templates with only a validated ID
  * interpolated — an admin cannot inject arbitrary JavaScript through them.
  * Free-form scripts are a separate, explicitly privileged feature.
+ *
+ * Google Tag Manager, GA4 and Google Ads are not here: the root layout writes
+ * them into the server HTML's <head> — see src/lib/analytics/google-tags.ts.
  */
-
-function sanitizeId(id: string | null | undefined, pattern: RegExp): string | null {
-  if (!id) return null;
-  const trimmed = id.trim();
-  return pattern.test(trimmed) ? trimmed : null;
-}
-
-const ID_PATTERNS = {
-  ga4: /^G-[A-Z0-9]{4,20}$/i,
-  gtm: /^GTM-[A-Z0-9]{4,20}$/i,
-  ads: /^AW-[0-9]{6,20}$/i,
-  numeric: /^[0-9]{6,25}$/,
-  alnum: /^[A-Za-z0-9_-]{4,40}$/,
-} as const;
 
 export function HeadTracking({
   settings,
@@ -35,35 +25,14 @@ export function HeadTracking({
   const gate = settings.consentRequired && !consentGranted;
   if (gate) return <CustomScripts scripts={scripts} placement="HEAD" consentGranted={consentGranted} />;
 
-  const ga4 = settings.ga4Enabled ? sanitizeId(settings.ga4Id, ID_PATTERNS.ga4) : null;
-  const gtm = settings.gtmEnabled ? sanitizeId(settings.gtmId, ID_PATTERNS.gtm) : null;
-  const ads = settings.googleAdsEnabled ? sanitizeId(settings.googleAdsId, ID_PATTERNS.ads) : null;
   const meta = settings.metaPixelEnabled ? sanitizeId(settings.metaPixelId, ID_PATTERNS.numeric) : null;
   const uet = settings.microsoftUetEnabled ? sanitizeId(settings.microsoftUetId, ID_PATTERNS.numeric) : null;
   const hotjar = settings.hotjarEnabled ? sanitizeId(settings.hotjarId, ID_PATTERNS.numeric) : null;
   const linkedin = settings.linkedinEnabled ? sanitizeId(settings.linkedinPartnerId, ID_PATTERNS.numeric) : null;
   const tiktok = settings.tiktokEnabled ? sanitizeId(settings.tiktokPixelId, ID_PATTERNS.alnum) : null;
-  const gtagId = ga4 ?? ads;
 
   return (
     <>
-      {gtm ? (
-        <Script id="gtm" strategy="afterInteractive">
-          {`(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','${gtm}');`}
-        </Script>
-      ) : null}
-
-      {gtagId ? (
-        <>
-          <Script src={`https://www.googletagmanager.com/gtag/js?id=${gtagId}`} strategy="afterInteractive" />
-          <Script id="gtag-init" strategy="afterInteractive">
-            {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());${
-              ga4 ? `gtag('config','${ga4}');` : ''
-            }${ads ? `gtag('config','${ads}');` : ''}`}
-          </Script>
-        </>
-      ) : null}
-
       {meta ? (
         <Script id="meta-pixel" strategy="afterInteractive">
           {`!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','${meta}');fbq('track','PageView');`}
@@ -100,7 +69,6 @@ export function HeadTracking({
 }
 
 export function BodyTracking({
-  settings,
   scripts,
   placement,
   consentGranted,
@@ -110,27 +78,9 @@ export function BodyTracking({
   placement: Extract<ScriptPlacement, 'BODY_START' | 'BODY_END'>;
   consentGranted: boolean;
 }) {
-  const gtm =
-    placement === 'BODY_START' && settings.gtmEnabled && !(settings.consentRequired && !consentGranted)
-      ? sanitizeId(settings.gtmId, ID_PATTERNS.gtm)
-      : null;
-
-  return (
-    <>
-      {gtm ? (
-        <noscript>
-          <iframe
-            src={`https://www.googletagmanager.com/ns.html?id=${gtm}`}
-            height="0"
-            width="0"
-            style={{ display: 'none', visibility: 'hidden' }}
-            title="Google Tag Manager"
-          />
-        </noscript>
-      ) : null}
-      <CustomScripts scripts={scripts} placement={placement} consentGranted={consentGranted} />
-    </>
-  );
+  // GTM's <noscript> fallback is rendered by the root layout, right after
+  // <body> opens, alongside the <head> tags.
+  return <CustomScripts scripts={scripts} placement={placement} consentGranted={consentGranted} />;
 }
 
 function CustomScripts({

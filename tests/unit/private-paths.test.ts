@@ -11,7 +11,7 @@ const read = (file: string) => fs.readFileSync(path.join(root, file), 'utf8');
 
 describe('isPrivatePath', () => {
   it('covers the admin, auth, sign-in, preview and API paths and everything under them', () => {
-    for (const p of ['/admin', '/admin/leads', '/auth/verify-2fa', LOGIN_PATH, '/preview/x', '/api', '/api/health']) {
+    for (const p of ['/admin', '/admin/leads', '/auth/verify-2fa', LOGIN_PATH, '/preview/x', '/api', '/api/health', '/seed-files']) {
       expect(isPrivatePath(p), p).toBe(true);
     }
   });
