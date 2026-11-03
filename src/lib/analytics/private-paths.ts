@@ -8,7 +8,15 @@ import { LOGIN_PATH_SEGMENT } from '@/lib/auth/routes';
  * admin and the sign-in screen. Pure, so the server layouts and the client
  * route guard apply the same rule.
  */
-const PRIVATE_PREFIXES = ['/admin', '/auth', `/${LOGIN_PATH_SEGMENT}`, '/preview', '/api'];
+const PRIVATE_PREFIXES = [
+  '/admin',
+  '/auth',
+  `/${LOGIN_PATH_SEGMENT}`,
+  '/preview',
+  '/api',
+  // The super-admin seed-file tool lives outside /admin by request.
+  '/seed-files',
+];
 
 /** True for a private path itself and any path beneath it. */
 export function isPrivatePath(pathname: string): boolean {

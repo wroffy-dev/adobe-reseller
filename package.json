@@ -1,8 +1,8 @@
 {
   "name": "dropbox-reseller",
-  "version": "1.7.0",
+  "version": "1.7.1",
   "release": {
-    "date": "2026-10-13"
+    "date": "2026-11-03"
   },
   "private": true,
   "scripts": {

@@ -1,8 +1,13 @@
 import type { Metadata, Viewport } from 'next';
+import { cookies, headers } from 'next/headers';
 import './globals.css';
 import { getSeoSettings, getTrackingSettings, getWebsiteSettings } from '@/lib/services/settings';
 import { BrandStyle } from '@/components/public/brand-style';
 import { TrackingRouteGuard } from '@/components/analytics/tracking-route-guard';
+import { GoogleTagsHead, GoogleTagManagerNoscript } from '@/components/analytics/google-tags';
+import { GoogleTagsLoader } from '@/components/analytics/google-tags-loader';
+import { ga4MeasurementId, resolveGoogleTags } from '@/lib/analytics/google-tags';
+import { isPrivatePath } from '@/lib/analytics/private-paths';
 import { ToastProvider } from '@/components/ui/toast';
 import { getRequestCountry } from '@/lib/country/request';
 import { siteUrl } from '@/lib/env';
@@ -34,26 +39,49 @@ export const viewport: Viewport = {
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const [site, tracking, country] = await Promise.all([
+  const [site, tracking, country, headerList, cookieStore] = await Promise.all([
     getWebsiteSettings(),
-    // Only for the route guard. The tags themselves render in the public
-    // layout, so the admin, sign-in, 2FA and preview screens never load them.
     getTrackingSettings(),
     // The market's own BCP-47 tag, so `<html lang>` agrees with the canonical
     // and the hreflang annotations the page emits. Request-cached, so this
     // shares the resolution the public layout already made.
     getRequestCountry().catch(() => null),
+    headers(),
+    cookies(),
   ]);
 
-  const measurementIds = [tracking.ga4Id?.trim() ?? ''].filter(Boolean);
+  /*
+   * GTM and the Google tag go in the server HTML's <head>, where Google's
+   * install instructions and every Google checker expect them — see
+   * src/lib/analytics/google-tags.ts. Never during maintenance, and never
+   * before consent when consent is required. The <head> copy is written on
+   * public paths only (the path comes from middleware); GoogleTagsLoader runs
+   * the same snippets in the browser wherever the <head> copy could not run —
+   * the client-rendered 404 page, arrival from the admin by client-side
+   * navigation, the re-render after consent — and itself skips private paths.
+   * The other vendors' tags still render from the public layout.
+   */
+  const pathname = headerList.get('x-pathname');
+  const consentGranted =
+    !tracking.consentRequired || cookieStore.get('tracking_consent')?.value === 'granted';
+  const googleTags = !site.maintenanceMode && consentGranted ? resolveGoogleTags(tracking) : null;
+  const tagsInHead = googleTags !== null && pathname !== null && !isPrivatePath(pathname);
+
+  const measurementId = ga4MeasurementId(tracking);
+  const measurementIds = measurementId ? [measurementId] : [];
 
   return (
     <html lang={country?.locale || 'en'} suppressHydrationWarning>
       <head>
+        {tagsInHead ? <GoogleTagsHead tags={googleTags} /> : null}
         <BrandStyle settings={site} />
       </head>
       <body>
+        {tagsInHead ? <GoogleTagManagerNoscript gtmId={googleTags.gtmId} /> : null}
         <TrackingRouteGuard measurementIds={measurementIds} />
+        {googleTags ? (
+          <GoogleTagsLoader gtmSnippet={googleTags.gtmSnippet} gtagSnippet={googleTags.gtagSnippet} />
+        ) : null}
         <ToastProvider>{children}</ToastProvider>
       </body>
     </html>
