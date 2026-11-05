@@ -16,7 +16,9 @@ concurrency:
 jobs:
   quality:
     name: Lint, typecheck, test, build
-    runs-on: ubuntu-latest
+    # Pinned: the PostgreSQL 16 client below comes from the Ubuntu 24.04
+    # archive; ubuntu-latest (26.04) no longer ships it.
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
 
     services:
