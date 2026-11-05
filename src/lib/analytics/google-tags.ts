@@ -1,4 +1,5 @@
 import type { TrackingSettings } from '@prisma/client';
+import { ALL_GRANTED, TRACKING_DENIED } from '@/lib/analytics/consent';
 
 /**
  * Google Tag Manager and the Google tag (GA4 / Google Ads), as plain snippets.
@@ -18,6 +19,15 @@ import type { TrackingSettings } from '@prisma/client';
  * page whose server HTML carried no tags). Each snippet marks itself loaded on
  * `window`, so whichever copy runs first wins and the other does nothing: no
  * double gtm.js, no double page_view.
+ *
+ * Google Consent Mode v2: GTM is written for every visitor, consent or not, so
+ * the container is always in the page source (Search Console verifies through
+ * it). What consent decides is the `gtag('consent', 'default', …)` call that
+ * runs before it: with "Ask for consent" on and no accepted cookie, advertising
+ * and analytics storage default to denied, and the tags inside the container
+ * wait for the banner's `gtag('consent', 'update', …)`. gtag.js (GA4 and Google
+ * Ads configured here, outside GTM) is still only loaded once consent is
+ * granted, exactly as before.
  *
  * Only IDs that match their documented shape are interpolated, and they are
  * written as JSON string literals, so nothing an admin types can become code.
@@ -49,27 +59,63 @@ export type GoogleTags = {
   gtmId: string | null;
   ga4Id: string | null;
   adsId: string | null;
-  /** Inline GTM bootstrap, or null when GTM is off. */
+  /**
+   * Inline Consent Mode default — initialises dataLayer/gtag and must run
+   * before GTM and gtag.js. Null when no Google tag is on.
+   */
+  consentSnippet: string | null;
+  /** Inline GTM bootstrap, or null when GTM is off. Independent of consent. */
   gtmSnippet: string | null;
-  /** Inline Google tag bootstrap (loads gtag.js itself), or null when off. */
+  /**
+   * Inline Google tag bootstrap (loads gtag.js itself), or null when off or
+   * when consent is required and not yet given.
+   */
   gtagSnippet: string | null;
 };
 
-/** Which Google tags are switched on with a valid ID, and their snippets. */
-export function resolveGoogleTags(settings: TrackingSettings): GoogleTags {
+/**
+ * Which Google tags are switched on with a valid ID, and their snippets.
+ *
+ * `consentGranted` is the visitor's state: true when "Ask for consent" is off
+ * or the visitor accepted the banner (see isConsentGranted).
+ */
+export function resolveGoogleTags(settings: TrackingSettings, consentGranted: boolean): GoogleTags {
   const gtmId = settings.gtmEnabled ? sanitizeId(settings.gtmId, ID_PATTERNS.gtm, { upper: true }) : null;
   const ga4Id = settings.ga4Enabled ? sanitizeId(settings.ga4Id, ID_PATTERNS.ga4, { upper: true }) : null;
   const adsId = settings.googleAdsEnabled
     ? sanitizeId(settings.googleAdsId, ID_PATTERNS.ads, { upper: true })
     : null;
 
+  const gtagIds = consentGranted ? [ga4Id, adsId].filter((id): id is string => Boolean(id)) : [];
+  const gtmSnippet = gtmId ? gtmBootstrap(gtmId) : null;
+  const gtagSnippet = gtagIds.length > 0 ? gtagBootstrap(gtagIds) : null;
+
   return {
     gtmId,
     ga4Id,
     adsId,
-    gtmSnippet: gtmId ? gtmBootstrap(gtmId) : null,
-    gtagSnippet: ga4Id || adsId ? gtagBootstrap([ga4Id, adsId].filter((id): id is string => Boolean(id))) : null,
+    consentSnippet: gtmSnippet || gtagSnippet ? consentDefault(consentGranted) : null,
+    gtmSnippet,
+    gtagSnippet,
   };
+}
+
+/**
+ * gtag('consent', 'default', …), which Google requires before any tag loads.
+ *
+ * Denied defaults carry `wait_for_update`, giving the banner's update half a
+ * second to arrive before tags that are already queued decide how to behave.
+ * Runs once per page however many copies execute, so a later copy cannot
+ * reset an update the banner has already made.
+ */
+function consentDefault(granted: boolean): string {
+  const signals = granted ? ALL_GRANTED : { ...TRACKING_DENIED, wait_for_update: 500 };
+  return (
+    `(function(w){w.__googleTags=w.__googleTags||{};if(w.__googleTags.consent)return;w.__googleTags.consent=1;` +
+    `w.dataLayer=w.dataLayer||[];w.gtag=w.gtag||function(){w.dataLayer.push(arguments);};` +
+    `w.gtag('consent','default',${JSON.stringify(signals)});` +
+    `})(window);`
+  );
 }
 
 /** The ID the GA4 opt-out flag (`ga-disable-<id>`) is keyed on, if any. */

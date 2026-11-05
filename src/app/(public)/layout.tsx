@@ -13,6 +13,7 @@ import { PopupHost } from "@/components/public/popup-host";
 import { JsonLd } from "@/components/seo/json-ld";
 import { HeadTracking, BodyTracking } from "@/components/analytics/tracking-scripts";
 import { ConsentBanner } from "@/components/analytics/consent-banner";
+import { CONSENT_COOKIE, isConsentGranted } from "@/lib/analytics/consent";
 import { organizationSchema, websiteSchema } from "@/lib/seo/structured-data";
 import { getCurrentUser } from "@/lib/auth/guards";
 import { resolveCountryPath } from "@/lib/country/registry";
@@ -78,9 +79,11 @@ export default async function PublicLayout({
     cookies(),
   ]);
 
-  const consentGranted =
-    !tracking.consentRequired || cookieStore.get("tracking_consent")?.value === "granted";
-  const consentUndecided = tracking.consentRequired && !cookieStore.get("tracking_consent");
+  const consentGranted = isConsentGranted(
+    tracking.consentRequired,
+    cookieStore.get(CONSENT_COOKIE)?.value,
+  );
+  const consentUndecided = tracking.consentRequired && !cookieStore.get(CONSENT_COOKIE);
 
   // Maintenance mode hides the public site from visitors — a restore turns it
   // on for the duration so nobody browses a half-restored database. Signed-in
