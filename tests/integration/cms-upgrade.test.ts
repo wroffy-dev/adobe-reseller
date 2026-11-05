@@ -384,9 +384,14 @@ describe('product ordering and featured products', () => {
     const result = await deleteBrand(tempId);
     expect(result.ok).toBe(true);
 
+    // Deleting a brand no market carries retires it to the recycle bin rather
+    // than destroying the row (see deleteBrand), so the product survives and
+    // keeps pointing at it — restoring the brand restores the link.
     const product = await prisma.product.findUniqueOrThrow({ where: { id: productIds[0]! } });
     expect(product.deletedAt).toBeNull();
-    expect(product.brandId).toBeNull();
+    expect(product.brandId).toBe(tempId);
+    const retired = await prisma.brand.findUniqueOrThrow({ where: { id: tempId } });
+    expect(retired.deletedAt).not.toBeNull();
 
     await prisma.product.update({ where: { id: productIds[0]! }, data: { brandId } });
   });
