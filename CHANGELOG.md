@@ -8,6 +8,29 @@ This project uses [semantic versioning](https://semver.org): MAJOR.MINOR.PATCH.
 
 ---
 
+## [1.8.0] — 2026-11-05
+
+### Changed
+
+- **Google Consent Mode v2.** With "Ask for consent before loading tracking"
+  on, Google Tag Manager used to be left out of the page until the visitor
+  accepted the banner, so a fresh request (view-source, Tag Assistant, Search
+  Console verification through GTM) found no `GTM-` container. GTM is now in
+  the server-rendered `<head>` of every public page for every visitor, with
+  its `<noscript>` right after `<body>`, preceded by
+  `gtag('consent', 'default', …)`:
+  - consent switch off, or on with the cookie accepted: everything granted;
+  - switch on without an accepted cookie: `ad_storage`, `ad_user_data`,
+    `ad_personalization` and `analytics_storage` denied,
+    `functionality_storage` and `security_storage` granted,
+    `wait_for_update: 500`.
+  The banner's Accept sends `gtag('consent', 'update', …)` with everything
+  granted, and Decline restates the denied signals; both still write the
+  `tracking_consent` cookie (`granted` / `denied`). Tags that load outside GTM
+  (GA4 / Google Ads via gtag.js, the other pixels, consent-gated custom
+  scripts) still wait for Accept, as before. Admin, sign-in, preview and API
+  routes still load no tracking.
+
 ## [1.7.1] — 2026-11-03
 
 ### Fixed

@@ -10,6 +10,10 @@ import type { GoogleTags } from '@/lib/analytics/google-tags';
 export function GoogleTagsHead({ tags }: { tags: GoogleTags }) {
   return (
     <>
+      {/* Consent defaults first: Google requires them before any tag loads. */}
+      {tags.consentSnippet ? (
+        <script id="google-consent-default" dangerouslySetInnerHTML={{ __html: tags.consentSnippet }} />
+      ) : null}
       {tags.gtmSnippet ? (
         <script id="google-tag-manager" dangerouslySetInnerHTML={{ __html: tags.gtmSnippet }} />
       ) : null}

@@ -3,8 +3,38 @@
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
+import {
+  ALL_GRANTED,
+  CONSENT_COOKIE,
+  CONSENT_DENIED,
+  CONSENT_GRANTED,
+  TRACKING_DENIED,
+  type ConsentSignals,
+} from '@/lib/analytics/consent';
 
-const COOKIE = 'tracking_consent';
+type GtagWindow = Window & { dataLayer?: unknown[]; gtag?: (...args: unknown[]) => void };
+
+/**
+ * Tells Google Consent Mode the visitor's answer.
+ *
+ * GTM is already on the page with advertising and analytics storage denied by
+ * default (see src/lib/analytics/google-tags.ts); this update is what lets its
+ * tags run. gtag is defined in <head>, but it is defined here too, the way
+ * Google documents it, so the update is queued even if that script did not run.
+ */
+function updateConsent(signals: ConsentSignals) {
+  const w = window as GtagWindow;
+  w.dataLayer = w.dataLayer || [];
+  const dataLayer = w.dataLayer;
+  w.gtag =
+    w.gtag ||
+    function gtag() {
+      // gtag.js and GTM read the Arguments object itself, not an array copy.
+      // eslint-disable-next-line prefer-rest-params
+      dataLayer.push(arguments);
+    };
+  w.gtag('consent', 'update', signals);
+}
 
 /** Shown only when Admin → Marketing requires consent before loading tags. */
 export function ConsentBanner({ message }: { message: string }) {
@@ -12,13 +42,17 @@ export function ConsentBanner({ message }: { message: string }) {
   const router = useRouter();
 
   React.useEffect(() => {
-    setVisible(!document.cookie.includes(`${COOKIE}=`));
+    setVisible(!document.cookie.includes(`${CONSENT_COOKIE}=`));
   }, []);
 
   const decide = (granted: boolean) => {
     const maxAge = 60 * 60 * 24 * 180;
-    document.cookie = `${COOKIE}=${granted ? 'granted' : 'denied'};path=/;max-age=${maxAge};samesite=lax`;
+    document.cookie = `${CONSENT_COOKIE}=${granted ? CONSENT_GRANTED : CONSENT_DENIED};path=/;max-age=${maxAge};samesite=lax`;
+    // Accept grants everything; Decline restates the denied defaults.
+    updateConsent(granted ? ALL_GRANTED : TRACKING_DENIED);
     setVisible(false);
+    // Re-render so the tags that wait for consent outside GTM (GA4 / Google
+    // Ads via gtag.js, the other pixels, consent-gated custom scripts) load.
     if (granted) router.refresh();
   };
 

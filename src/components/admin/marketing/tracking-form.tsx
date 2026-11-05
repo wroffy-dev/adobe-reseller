@@ -272,7 +272,7 @@ export function TrackingForm({
         <Card>
           <CardHeader
             title="Consent"
-            description="When required, no tag loads until the visitor accepts."
+            description="When required, Google Tag Manager still loads but in Google Consent Mode (advertising and analytics storage denied) until the visitor accepts. Every other tag waits for Accept."
           />
           <CardBody className="space-y-4">
             <fieldset disabled={!canEdit || pending} className="space-y-4">

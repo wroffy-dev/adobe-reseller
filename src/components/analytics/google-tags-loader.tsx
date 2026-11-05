@@ -17,15 +17,18 @@ const injected = new Set<string>();
  *   - the 404 page, which Next.js renders on the client;
  *   - a public page reached by client-side navigation from the admin, whose
  *     server HTML was the admin's and carried no tags;
- *   - the page re-rendered after the visitor accepts the consent banner.
+ *   - the page re-rendered after the visitor accepts the consent banner (which
+ *     is when gtag.js for GA4 / Google Ads first becomes allowed).
  * This covers all three. Each snippet records itself on `window`, so when the
  * <head> copy has already run this does nothing — no second gtm.js, no second
  * page_view.
  */
 export function GoogleTagsLoader({
+  consentSnippet,
   gtmSnippet,
   gtagSnippet,
 }: {
+  consentSnippet: string | null;
   gtmSnippet: string | null;
   gtagSnippet: string | null;
 }) {
@@ -33,14 +36,15 @@ export function GoogleTagsLoader({
 
   useEffect(() => {
     if (isPrivatePath(pathname ?? '/')) return;
-    for (const code of [gtmSnippet, gtagSnippet]) {
+    // Consent defaults first, as in <head>.
+    for (const code of [consentSnippet, gtmSnippet, gtagSnippet]) {
       if (!code || injected.has(code)) continue;
       injected.add(code);
       const script = document.createElement('script');
       script.text = code;
       document.head.appendChild(script);
     }
-  }, [pathname, gtmSnippet, gtagSnippet]);
+  }, [pathname, consentSnippet, gtmSnippet, gtagSnippet]);
 
   return null;
 }
