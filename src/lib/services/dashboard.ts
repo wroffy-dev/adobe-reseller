@@ -6,6 +6,12 @@ export type DashboardMetrics = {
   totalLeads: number;
   newToday: number;
   newThisMonth: number;
+  /** Leads created yesterday (calendar day), for the "New today" comparison. */
+  newYesterday: number;
+  /** Leads created in the reporting window (`days`). */
+  periodTotal: number;
+  /** Leads created in the same-length window just before it. */
+  previousPeriodTotal: number;
   qualified: number;
   won: number;
   lost: number;
@@ -43,8 +49,20 @@ export async function getDashboardMetrics(
   const notDeleted = countryId ? { deletedAt: null, countryId } : { deletedAt: null };
   const since = startOfDay(new Date(Date.now() - (days - 1) * 86_400_000));
 
-  const [total, today, month, grouped, productGroups, sourceGroups, recentLeads] =
-    await Promise.all([
+  const previousSince = new Date(since.getTime() - days * 86_400_000);
+  const yesterday = new Date(startOfDay().getTime() - 86_400_000);
+
+  const [
+    total,
+    today,
+    month,
+    grouped,
+    productGroups,
+    sourceGroups,
+    recentLeads,
+    previousPeriodTotal,
+    newYesterday,
+  ] = await Promise.all([
       prisma.lead.count({ where: notDeleted }),
       prisma.lead.count({
         where: { ...notDeleted, createdAt: { gte: startOfDay() } },
@@ -74,6 +92,12 @@ export async function getDashboardMetrics(
       prisma.lead.findMany({
         where: { ...notDeleted, createdAt: { gte: since } },
         select: { createdAt: true },
+      }),
+      prisma.lead.count({
+        where: { ...notDeleted, createdAt: { gte: previousSince, lt: since } },
+      }),
+      prisma.lead.count({
+        where: { ...notDeleted, createdAt: { gte: yesterday, lt: startOfDay() } },
       }),
     ]);
 
@@ -123,6 +147,9 @@ export async function getDashboardMetrics(
     totalLeads: total,
     newToday: today,
     newThisMonth: month,
+    newYesterday,
+    periodTotal: recentLeads.length,
+    previousPeriodTotal,
     qualified: byStatus.QUALIFIED,
     won: byStatus.WON,
     lost: byStatus.LOST,

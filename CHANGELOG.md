@@ -8,6 +8,31 @@ This project uses [semantic versioning](https://semver.org): MAJOR.MINOR.PATCH.
 
 ---
 
+## [Unreleased]
+
+### Changed
+
+- **Admin dashboard.** Reviewed against the UI UX Pro Max guidelines and
+  reworked within the existing admin design system:
+  - KPI tiles: "Total leads" shows a sparkline and the change against the
+    previous 30 days; "New today" compares with yesterday; "Conversion rate"
+    is renamed **Win rate**, which is what it measures (won ÷ won + lost).
+  - Needs attention lists only items with something in them, action items
+    first with an icon as well as colour; zero items collapse into one
+    "All clear" line.
+  - The 30-day chart is now an area chart with a written summary (total,
+    daily average, busiest day, previous period), gridlines with values, and a
+    "Show daily figures" table for keyboard and screen-reader users.
+  - Pipeline shows each open stage's count and share with the number outside
+    the bar (the white-on-light-red label failed contrast), links every stage
+    to its filtered lead list, and shows Won / Lost separately with the win
+    rate.
+  - Recent leads show initials avatars and eight rows; setup shows a progress
+    bar with outstanding items first; card links stay on the title line on
+    phones; quick actions get their hover icon colour and a focus ring back.
+  - Percentage changes are hidden when the previous period has fewer than 10
+    leads, where a figure like "+2980%" says less than the two numbers do.
+
 ## [1.8.0] — 2026-11-05
 
 ### Changed

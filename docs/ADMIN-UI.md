@@ -62,3 +62,17 @@ including mappings for hard-coded `bg-white` and the tinted status utilities
   sits in the same place on every screen.
 - Dashboard: welcome line, KPI tiles, needs-attention and quick actions, trends,
   recent records — glass panels over the ambient wash.
+  - KPI tiles carry a change chip against the previous 30 days and a sparkline
+    where it helps; a change is only shown as a percentage when the previous
+    period has at least 10 records, otherwise the raw numbers are shown.
+  - Needs attention lists only items with work in them (action items first);
+    items at zero collapse into one "All clear" line.
+  - The 30-day trend is an area chart with a written summary (total, daily
+    average, busiest day, previous period), y-axis gridlines, hover values and
+    a "Show daily figures" table for keyboard and screen-reader users.
+  - Pipeline shows each open stage's share of the open pipeline (a snapshot of
+    current statuses, so no stage-to-stage "conversion"), with counts outside
+    the bars, every row linking to the filtered lead list, and Won / Lost as
+    separate outcomes with the win rate.
+  - Card header links stay on the title's line on phones; lead and stage links
+    keep the dashboard's country.
