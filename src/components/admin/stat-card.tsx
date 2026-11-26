@@ -74,7 +74,7 @@ export function StatCard({
         {sparkline && sparkline.length > 1 ? <Sparkline values={sparkline} /> : null}
       </div>
 
-      <div className="mt-1.5 flex min-w-0 items-center gap-2">
+      <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
         {typeof trend === 'number' && Number.isFinite(trend) ? <TrendChip value={trend} invert={invertTrend} /> : null}
         {hint ? <p className="min-w-0 truncate text-xs text-muted" title={hint}>{hint}</p> : null}
       </div>

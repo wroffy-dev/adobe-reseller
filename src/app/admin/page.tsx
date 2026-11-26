@@ -1,13 +1,13 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
-import { ArrowUpRight, Check, CircleAlert, ChevronRight } from 'lucide-react';
+import { ArrowUpRight, Check, CircleAlert, ChevronRight, CircleCheck } from 'lucide-react';
 import { prisma } from '@/lib/db/prisma';
 import { requirePermission, userCan } from '@/lib/auth/guards';
 import { getDashboardMetrics, getActionItems, getSetupChecks } from '@/lib/services/dashboard';
 import { AdminPageHeader } from '@/components/admin/page-header';
 import { StatCard } from '@/components/admin/stat-card';
 import { QuickActions } from '@/components/admin/quick-actions';
-import { BarChart, FunnelBars } from '@/components/admin/charts';
+import { TrendChart, PipelineStages, percentChange } from '@/components/admin/charts';
 import { LeadStatusBadge } from '@/components/admin/status-badge';
 import { Card, CardHeader, CardBody } from '@/components/ui/card';
 import { Alert, EmptyState } from '@/components/ui/states';
@@ -46,7 +46,7 @@ export default async function AdminDashboard({
         ? prisma.lead.findMany({
             where: { deletedAt: null, ...(countryId ? { countryId } : {}) },
             orderBy: { createdAt: 'desc' },
-            take: 6,
+            take: 8,
             select: {
               id: true,
               name: true,
@@ -86,7 +86,22 @@ export default async function AdminDashboard({
 
   const [pagesCount, productsCount, customersCount, submissionsCount] = counts;
   const needsAttention = actionItems.filter((item) => item.tone === 'attention' && item.count > 0);
+  // Work first: items that need action, then anything else with a count. Items
+  // at zero collapse into one quiet "all clear" line instead of six equal rows.
+  const pendingItems = actionItems
+    .filter((item) => item.count > 0)
+    .sort((a, b) => Number(b.tone === 'attention') - Number(a.tone === 'attention'));
+  const clearItems = actionItems.filter((item) => item.count === 0);
   const outstandingSetup = setupChecks.filter((check) => !check.configured);
+  const configuredCount = setupChecks.length - outstandingSetup.length;
+
+  // Links into lead lists keep the storefront the dashboard is showing.
+  const withCountry = (path: string) =>
+    country.multiCountry
+      ? `${path}${path.includes('?') ? '&' : '?'}country=${encodeURIComponent(country.value)}`
+      : path;
+  // Card headers keep their link on the title's line, even on phones.
+  const inlineHeader = 'flex-row items-center justify-between';
 
   return (
     // Overview screen: an ambient wash behind glass panels.
@@ -126,16 +141,18 @@ export default async function AdminDashboard({
             <StatCard
               label="Total leads"
               value={metrics.totalLeads}
-              hint={`${formatNumber(metrics.newThisMonth)} this month`}
-              href="/admin/leads"
+              hint={`${formatNumber(metrics.periodTotal)} in 30 days`}
+              trend={percentChange(metrics.periodTotal, metrics.previousPeriodTotal)}
+              sparkline={metrics.trend.map((point) => point.count)}
+              href={withCountry('/admin/leads')}
               icon="inbox"
             />
             <StatCard
               label="New today"
               value={metrics.newToday}
-              hint="Waiting to be reviewed"
+              hint={`${formatNumber(metrics.newYesterday)} yesterday`}
               tone="brand"
-              href="/admin/leads?status=NEW"
+              href={withCountry('/admin/leads?status=NEW')}
               icon="star"
             />
             <StatCard
@@ -146,7 +163,7 @@ export default async function AdminDashboard({
               icon="kanban"
             />
             <StatCard
-              label="Conversion rate"
+              label="Win rate"
               value={formatPercent(metrics.conversionRate)}
               hint={`${formatNumber(metrics.won)} won · ${formatNumber(metrics.lost)} lost`}
               tone={metrics.conversionRate >= 25 ? 'success' : 'default'}
@@ -203,37 +220,68 @@ export default async function AdminDashboard({
                   : 'Nothing is waiting on you right now.'
               }
             />
-            <CardBody className="pt-0">
-              <ul className="grid gap-2 sm:grid-cols-2">
-                {actionItems.map((item) => (
-                  <li key={item.id}>
-                    <Link
-                      href={item.href}
-                      className={cn(
-                        'flex items-center gap-3 rounded-lg border px-3 py-2.5 transition-colors',
-                        item.tone === 'attention' && item.count > 0
-                          ? 'border-amber-200 bg-amber-50/60 hover:border-amber-300'
-                          : 'glass-chip border-hairline hover:border-brand/40',
-                      )}
-                    >
-                      <span
-                        className={cn(
-                          'font-heading text-lg font-bold tabular-nums',
-                          item.tone === 'attention' && item.count > 0
-                            ? 'text-amber-700'
-                            : 'text-content',
-                        )}
-                      >
-                        {formatNumber(item.count)}
+            <CardBody className="space-y-3 pt-0">
+              {pendingItems.length === 0 ? (
+                <p className="flex items-center gap-2.5 rounded-lg border border-hairline px-3 py-3 text-sm text-content">
+                  <CircleCheck className="h-4 w-4 shrink-0 text-emerald-600" aria-hidden="true" />
+                  You&rsquo;re all caught up.
+                </p>
+              ) : (
+                <ul className="grid gap-2 sm:grid-cols-2">
+                  {pendingItems.map((item) => {
+                    const urgent = item.tone === 'attention';
+                    return (
+                      <li key={item.id}>
+                        <Link
+                          href={item.href}
+                          className={cn(
+                            'group flex min-h-11 items-center gap-3 rounded-lg border px-3 py-2.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand',
+                            urgent
+                              ? 'border-amber-200 bg-amber-50/60 hover:border-amber-300'
+                              : 'glass-chip border-hairline hover:border-brand/40',
+                          )}
+                        >
+                          {urgent ? (
+                            <CircleAlert className="h-4 w-4 shrink-0 text-amber-600" aria-hidden="true" />
+                          ) : null}
+                          <span
+                            className={cn(
+                              'font-heading text-lg font-bold tabular-nums',
+                              urgent ? 'text-amber-700' : 'text-content',
+                            )}
+                          >
+                            {formatNumber(item.count)}
+                          </span>
+                          <span className="min-w-0 flex-1 truncate text-sm text-content">
+                            {item.label}
+                            {urgent ? <span className="sr-only"> (needs action)</span> : null}
+                          </span>
+                          <ChevronRight
+                            className="h-4 w-4 shrink-0 text-muted transition-transform motion-safe:group-hover:translate-x-0.5"
+                            aria-hidden="true"
+                          />
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+              {clearItems.length > 0 ? (
+                <p className="flex items-start gap-2 text-xs text-muted">
+                  <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600" aria-hidden="true" />
+                  <span>
+                    <span className="font-medium text-content">All clear:</span>{' '}
+                    {clearItems.map((item, i) => (
+                      <span key={item.id}>
+                        {i > 0 ? ' · ' : ''}
+                        <Link href={item.href} className="hover:text-content hover:underline">
+                          {item.label}
+                        </Link>
                       </span>
-                      <span className="min-w-0 flex-1 truncate text-sm text-content">
-                        {item.label}
-                      </span>
-                      <ChevronRight className="h-4 w-4 shrink-0 text-muted" aria-hidden="true" />
-                    </Link>
-                  </li>
-                ))}
-              </ul>
+                    ))}
+                  </span>
+                </p>
+              ) : null}
             </CardBody>
           </Card>
         ) : null}
@@ -251,7 +299,8 @@ export default async function AdminDashboard({
         <div className="mt-5 grid gap-5 lg:grid-cols-3">
           <Card glass className="lg:col-span-2">
             <CardHeader
-              title="Leads over the last 30 days"
+              className={inlineHeader}
+              title="Leads, last 30 days"
               actions={
                 <Link
                   href="/admin/reports"
@@ -263,41 +312,43 @@ export default async function AdminDashboard({
               }
             />
             <CardBody>
-              <BarChart data={metrics.trend} label="Leads per day" />
+              <TrendChart data={metrics.trend} previousTotal={metrics.previousPeriodTotal} />
             </CardBody>
           </Card>
 
           <Card glass>
             <CardHeader
+              className={inlineHeader}
               title="Pipeline"
               actions={
                 <Link
                   href="/admin/pipeline"
-                  className="text-sm font-medium text-brand hover:underline"
+                  className="inline-flex items-center gap-1 text-sm font-medium text-brand hover:underline"
                 >
-                  Open
+                  Board
+                  <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
                 </Link>
               }
             />
             <CardBody>
-              <FunnelBars
-                stages={[
-                  { label: 'New', count: metrics.byStatus.NEW },
-                  { label: 'Contacted', count: metrics.byStatus.CONTACTED },
-                  { label: 'Qualified', count: metrics.byStatus.QUALIFIED },
-                  { label: 'Proposal', count: metrics.byStatus.PROPOSAL },
-                  { label: 'Negotiation', count: metrics.byStatus.NEGOTIATION },
-                  {
-                    label: 'Won',
-                    count: metrics.byStatus.WON,
-                    tone: 'bg-emerald-500',
-                  },
-                  {
-                    label: 'Lost',
-                    count: metrics.byStatus.LOST,
-                    tone: 'bg-red-400',
-                  },
-                ]}
+              <PipelineStages
+                stages={(
+                  [
+                    ['New', 'NEW'],
+                    ['Contacted', 'CONTACTED'],
+                    ['Qualified', 'QUALIFIED'],
+                    ['Proposal', 'PROPOSAL'],
+                    ['Negotiation', 'NEGOTIATION'],
+                  ] as const
+                ).map(([label, status]) => ({
+                  label,
+                  count: metrics.byStatus[status],
+                  href: withCountry(`/admin/leads?status=${status}`),
+                }))}
+                won={metrics.byStatus.WON}
+                lost={metrics.byStatus.LOST}
+                wonHref={withCountry('/admin/leads?status=WON')}
+                lostHref={withCountry('/admin/leads?status=LOST')}
               />
             </CardBody>
           </Card>
@@ -309,10 +360,11 @@ export default async function AdminDashboard({
         {canSeeLeads ? (
           <Card glass className="lg:col-span-2">
             <CardHeader
+              className={inlineHeader}
               title="Recent leads"
               actions={
                 <Link
-                  href="/admin/leads"
+                  href={withCountry('/admin/leads')}
                   className="inline-flex items-center gap-1 text-sm font-medium text-brand hover:underline"
                 >
                   View all
@@ -324,6 +376,13 @@ export default async function AdminDashboard({
               <EmptyState
                 title="No leads yet"
                 description="Leads captured from your website forms will appear here."
+                action={
+                  can('leads.create') ? (
+                    <Link href="/admin/leads/new" className="text-sm font-medium text-brand hover:underline">
+                      Add a lead
+                    </Link>
+                  ) : undefined
+                }
               />
             ) : (
               <ul className="divide-y divide-hairline">
@@ -331,8 +390,14 @@ export default async function AdminDashboard({
                   <li key={lead.id}>
                     <Link
                       href={`/admin/leads/${lead.id}`}
-                      className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/[0.03] sm:px-5"
+                      className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/[0.03] focus-visible:bg-muted/[0.05] focus-visible:outline-none sm:px-5"
                     >
+                      <span
+                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand/10 text-xs font-semibold text-brand"
+                        aria-hidden="true"
+                      >
+                        {initials(lead.name)}
+                      </span>
                       <span className="min-w-0 flex-1">
                         <span className="block truncate text-sm font-medium text-content">
                           {lead.name}
@@ -343,7 +408,12 @@ export default async function AdminDashboard({
                             .join(' · ') || lead.email}
                         </span>
                       </span>
-                      <span className="hidden shrink-0 text-xs text-muted sm:block">
+                      <span
+                        className={cn(
+                          'hidden shrink-0 text-xs sm:block',
+                          lead.assignedTo ? 'text-content' : 'italic text-muted',
+                        )}
+                      >
                         {lead.assignedTo?.name ?? 'Unassigned'}
                       </span>
                       <LeadStatusBadge status={lead.status} />
@@ -366,12 +436,27 @@ export default async function AdminDashboard({
                 description={
                   outstandingSetup.length === 0
                     ? 'Everything essential is configured.'
-                    : `${outstandingSetup.length} still to configure`
+                    : `${configuredCount} of ${setupChecks.length} done · ${outstandingSetup.length} to go`
                 }
               />
               <CardBody className="pt-0">
+                <div
+                  className="mb-3 h-1.5 overflow-hidden rounded-full bg-muted/15"
+                  role="progressbar"
+                  aria-label="Setup progress"
+                  aria-valuemin={0}
+                  aria-valuemax={setupChecks.length}
+                  aria-valuenow={configuredCount}
+                >
+                  <div
+                    className="h-full rounded-full bg-emerald-500 motion-safe:transition-[width] motion-safe:duration-500"
+                    style={{ width: `${(configuredCount / Math.max(1, setupChecks.length)) * 100}%` }}
+                  />
+                </div>
                 <ul className="space-y-1">
-                  {setupChecks.map((check) => (
+                  {[...setupChecks]
+                    .sort((a, b) => Number(a.configured) - Number(b.configured))
+                    .map((check) => (
                     <li key={check.id}>
                       <Link
                         href={check.href}
@@ -416,6 +501,7 @@ export default async function AdminDashboard({
           {recentActivity.length > 0 ? (
             <Card glass>
               <CardHeader
+                className={inlineHeader}
                 title="Recent activity"
                 actions={
                   <Link
@@ -451,4 +537,13 @@ export default async function AdminDashboard({
       </div>
     </div>
   );
+}
+
+/** Two initials for the lead avatar: first and last word of the name. */
+function initials(name: string): string {
+  const words = name.trim().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return '?';
+  const first = words[0]![0] ?? '';
+  const last = words.length > 1 ? (words[words.length - 1]![0] ?? '') : '';
+  return (first + last).toUpperCase();
 }
